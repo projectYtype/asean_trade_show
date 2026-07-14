@@ -12,7 +12,7 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
-  <!-- Babel (for compiling JSX in browser) -->
+  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
@@ -26,7 +26,6 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     
-    /* 모바일에서 탭 스크롤바 숨기기 위한 유틸리티 */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -74,12 +73,13 @@
       </div>
     );
 
+    // 모달 상단이 잘리는 현상을 방지하기 위해 컨테이너 레이아웃과 최대 높이를 안전하게 수정했습니다.
     const Modal = ({ isOpen, onClose, title, children }) => {
       if (!isOpen) return null;
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col relative z-10 transform transition-all animate-zoom-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto pt-16 sm:pt-20">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[calc(100vh-5rem)] flex flex-col relative z-10 transform transition-all animate-zoom-in">
             <div className="flex justify-between items-center p-5 sm:px-8 sm:py-6 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{title}</h3>
               <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
@@ -117,21 +117,30 @@
     const initialData = {
       companies: [
         {
-          id: 'comp_1', loginId: 'COMP01', password: 'pass123', nameEn: 'Korea Tech Co., Ltd.', brandEn: 'K-Tech',
-          contactName: 'Jane Doe / Manager', contactPhone: '+82 10-1234-5678', contactEmail: 'jane@ktech.kr',
-          introEn: 'Leading provider of innovative tech solutions specializing in AI and cloud infrastructure.', businessType: 'Manufacturer',
-          productCategory: 'Electronics & Software', moq: 'Product A: $50 / MOQ: 100\nProduct B: $120 / MOQ: 50',
-          logoUrl: '',
+          id: 'comp_1', loginId: 'COMP01', password: 'pass123', 
+          nameEn: '주식회사 닥터오레고닌', brandEn: 'Dr. Oregonin', country: '한국',
+          contactName: '권예은 연구원', contactPhone: '+82 10-0000-0000', contactEmail: 'info@dr-oregonin.com',
+          website: 'https://dr-oregonin.com', logoUrl: '',
+          timeSlots: '10:00~10:30, 10:30~11:00, 11:00~11:30, 11:30~12:00, 13:00~13:30, 13:30~14:00, 14:00~14:30, 14:30~15:00, 15:00~15:30, 15:30~16:00',
+          businessArea: '뷰티·식품 / 화장품, 건강기능식품 등 그린바이오',
+          introEn: '강원대학교 교수 창업 기반의 천연물 바이오 소재 연구개발 전문 기업입니다. 강원지역 자생 산림자원을 활용해 항노화 및 기능성 헤어케어, 스킨케어, 건강기능식품 등을 독자적으로 상용화하고 있습니다.',
+          competitiveness: '• 100종 이상의 고함량 폴리페놀 약효 물질 DB, SCI급 국제 논문, 인체적용시험 데이터 및 특허 보유\n• 샴푸, 트리트먼트, 화장품, 건강기능식품 등 복수 카테고리 세트 제안 가능\n• 미국 H-MART, 홍콩 Big C, 싱가포르 등 해외 대형 유통망 입점 확정',
+          products: '• Taxifolin Plus Shampoo ($12 / MOQ 500개)\n• Orethistle Platinum ($12 / MOQ 500개)',
+          exportStatus: '미국, 싱가포르, 홍콩, 베트남',
+          targetBuyer: '미국 / 온·오프라인 몰 운영 바이어 및 벤더사'
         }
       ],
       buyers: [
         {
-          id: 'buyer_1', loginId: 'BUYER01', password: 'pass123', firstName: 'John', lastName: 'Smith',
-          position: 'Sourcing Director', mobile: '+65 9876 5432', email: 'john@globalsourcing.sg',
-          companyName: 'Global Sourcing PTE LTD', businessType: 'Distributor', website: 'https://globalsourcing.sg',
-          history: 'Cooperated with several beauty brand manufacturers in 2024. Looking for tech partners this year.', annualSales: '$5M USD',
-          preferredContact: 'Email', address: 'Marina Bay Financial Centre, Singapore', officialPhone: '+65 6789 0123',
-          officialEmail: 'info@globalsourcing.sg', attendanceDate: '2026-08-24'
+          id: 'buyer_1', loginId: 'BUYER01', password: 'pass123', 
+          firstName: 'John', lastName: 'Smith', position: 'Sourcing Director', 
+          mobile: '+65 9876 5432', email: 'john@globalsourcing.sg',
+          companyName: 'Global Sourcing PTE LTD', country: 'Singapore', website: 'https://globalsourcing.sg', 
+          address: 'Marina Bay Financial Centre, Singapore', logoUrl: '',
+          timeSlots: '10:00~10:30, 13:00~13:30, 14:00~14:30',
+          businessType: 'Distributor / Retailer',
+          targetCategories: 'Beauty, Skincare, Health Supplements',
+          history: 'Cooperated with several beauty brand manufacturers in 2024. Looking for green-bio tech partners this year.',
         }
       ],
       meetings: []
@@ -158,7 +167,6 @@
           return;
         }
         
-        // 데이터와 입력값을 모두 문자열(String)로 명시적 변환 후 비교합니다.
         const comp = data.companies.find(c => String(c.loginId) === String(loginId) && String(c.password) === String(password));
         if (comp) {
           setSessionRole('company');
@@ -375,42 +383,53 @@
             )}
           </div>
 
+          {/* Company Add Modal */}
           <Modal isOpen={isAddCompanyModalOpen} onClose={() => setIsAddCompanyModalOpen(false)} title="Add New Company Profile">
             <form onSubmit={handleAddCompany} className="space-y-6 sm:space-y-8">
               <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
                 <h4 className="font-bold text-gray-900 mb-4 flex items-center"><span className="bg-gray-200 text-gray-700 w-6 h-6 rounded-full inline-flex items-center justify-center mr-2 text-xs">🔒</span> Login Credentials</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><Input label="Login ID" value={newCompany.loginId || ''} onChange={e => setNewCompany({...newCompany, loginId: e.target.value})} required /><Input label="Password" value={newCompany.password || ''} onChange={e => setNewCompany({...newCompany, password: e.target.value})} required /></div>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">1. Contact Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Contact Name / Position" value={newCompany.contactName || ''} onChange={e => setNewCompany({...newCompany, contactName: e.target.value})} />
-                  <Input label="Mobile Number" value={newCompany.contactPhone || ''} onChange={e => setNewCompany({...newCompany, contactPhone: e.target.value})} />
-                  <div className="col-span-1 md:col-span-2"><Input label="Email Address" type="email" value={newCompany.contactEmail || ''} onChange={e => setNewCompany({...newCompany, contactEmail: e.target.value})} /></div>
+                  <Input label="Login ID" value={newCompany.loginId || ''} onChange={e => setNewCompany({...newCompany, loginId: e.target.value})} required />
+                  <Input label="Password" value={newCompany.password || ''} onChange={e => setNewCompany({...newCompany, password: e.target.value})} required />
                 </div>
               </div>
+              
               <div>
-                <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">2. Company Details</h4>
+                <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">1. Company Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Company Name (En)" value={newCompany.nameEn || ''} onChange={e => setNewCompany({...newCompany, nameEn: e.target.value})} required />
-                  <Input label="Brand Name (En)" value={newCompany.brandEn || ''} onChange={e => setNewCompany({...newCompany, brandEn: e.target.value})} required />
-                  <div className="col-span-1 md:col-span-2"><Input label="Brand Logo (Google Drive Image Link)" placeholder="https://drive.google.com/..." value={newCompany.logoUrl || ''} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} /></div>
+                  <Input label="Company Name" value={newCompany.nameEn || ''} onChange={e => setNewCompany({...newCompany, nameEn: e.target.value})} required placeholder="e.g. 주식회사 닥터오레고닌" />
+                  <Input label="Brand Name" value={newCompany.brandEn || ''} onChange={e => setNewCompany({...newCompany, brandEn: e.target.value})} required />
+                  <Input label="Country" value={newCompany.country || ''} onChange={e => setNewCompany({...newCompany, country: e.target.value})} placeholder="e.g. 한국" />
                   <Input label="Website" value={newCompany.website || ''} onChange={e => setNewCompany({...newCompany, website: e.target.value})} />
-                  <Input label="SNS Account" value={newCompany.sns || ''} onChange={e => setNewCompany({...newCompany, sns: e.target.value})} />
-                  <div className="col-span-1 md:col-span-2"><Input label="Promo Video Link" value={newCompany.videoLink || ''} onChange={e => setNewCompany({...newCompany, videoLink: e.target.value})} /></div>
+                  <div className="col-span-1 md:col-span-2">
+                    <Input label="Brand Logo (Google Drive Image Link)" placeholder="https://drive.google.com/..." value={newCompany.logoUrl || ''} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} />
+                  </div>
                 </div>
               </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">2. Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="Manager / Position" value={newCompany.contactName || ''} onChange={e => setNewCompany({...newCompany, contactName: e.target.value})} placeholder="e.g. 권예은 연구원" />
+                  <Input label="Mobile Number" value={newCompany.contactPhone || ''} onChange={e => setNewCompany({...newCompany, contactPhone: e.target.value})} />
+                  <Input label="Email Address" type="email" value={newCompany.contactEmail || ''} onChange={e => setNewCompany({...newCompany, contactEmail: e.target.value})} />
+                  <Input label="Available Time Slots" value={newCompany.timeSlots || ''} onChange={e => setNewCompany({...newCompany, timeSlots: e.target.value})} placeholder="e.g. 10:00~10:30, 10:30~11:00..." />
+                </div>
+              </div>
+
               <div>
                 <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">3. Business & Product Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="col-span-1 md:col-span-2"><Input isTextArea label="Brand Intro & Differentiation (En)" value={newCompany.introEn || ''} onChange={e => setNewCompany({...newCompany, introEn: e.target.value})} /></div>
-                  <Input label="Business Type" value={newCompany.businessType || ''} onChange={e => setNewCompany({...newCompany, businessType: e.target.value})} />
-                  <Input label="Product Categories" value={newCompany.productCategory || ''} onChange={e => setNewCompany({...newCompany, productCategory: e.target.value})} />
-                  <div className="col-span-1 md:col-span-2"><Input isTextArea label="Product Details & MOQ (En, USD)" value={newCompany.moq || ''} onChange={e => setNewCompany({...newCompany, moq: e.target.value})} /></div>
-                  <div className="col-span-1 md:col-span-2"><Input label="Product Photos (Google Drive Link)" placeholder="Link to folder or PDF..." value={newCompany.productImagesLink || ''} onChange={e => setNewCompany({...newCompany, productImagesLink: e.target.value})} /></div>
+                <div className="grid grid-cols-1 gap-4">
+                  <Input label="Business Area" value={newCompany.businessArea || ''} onChange={e => setNewCompany({...newCompany, businessArea: e.target.value})} placeholder="e.g. 뷰티·식품 / 화장품, 건강기능식품 등 그린바이오" />
+                  <Input isTextArea label="Brand Intro" value={newCompany.introEn || ''} onChange={e => setNewCompany({...newCompany, introEn: e.target.value})} placeholder="강원대학교 교수 창업 기반의..." />
+                  <Input isTextArea label="Competitiveness" value={newCompany.competitiveness || ''} onChange={e => setNewCompany({...newCompany, competitiveness: e.target.value})} placeholder="• 100종 이상의 고함량 폴리페놀..." />
+                  <Input isTextArea label="Products & MOQ" value={newCompany.products || ''} onChange={e => setNewCompany({...newCompany, products: e.target.value})} placeholder="• Taxifolin Plus Shampoo ($12 / MOQ 500개)" />
+                  <Input label="Export Status" value={newCompany.exportStatus || ''} onChange={e => setNewCompany({...newCompany, exportStatus: e.target.value})} placeholder="e.g. 미국, 싱가포르, 홍콩, 베트남" />
+                  <Input label="Target Buyer" value={newCompany.targetBuyer || ''} onChange={e => setNewCompany({...newCompany, targetBuyer: e.target.value})} placeholder="e.g. 미국 / 온·오프라인 몰 운영 바이어 및 벤더사" />
+                  <Input label="Product Photos (Google Drive Link)" placeholder="Link to folder or PDF..." value={newCompany.productImagesLink || ''} onChange={e => setNewCompany({...newCompany, productImagesLink: e.target.value})} />
                 </div>
               </div>
-              {/* 모바일 화면에서는 버튼 풀사이즈 세로 배치 */}
+              
               <div className="pt-6 border-t flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white pb-2">
                 <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setIsAddCompanyModalOpen(false)}>Cancel</Button>
                 <Button type="submit" className="w-full sm:w-auto">Save Company</Button>
@@ -418,12 +437,17 @@
             </form>
           </Modal>
 
+          {/* Buyer Add Modal */}
           <Modal isOpen={isAddBuyerModalOpen} onClose={() => setIsAddBuyerModalOpen(false)} title="Add New Buyer Profile">
             <form onSubmit={handleAddBuyer} className="space-y-6 sm:space-y-8">
                 <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
                     <h4 className="font-bold text-gray-900 mb-4 flex items-center"><span className="bg-gray-200 text-gray-700 w-6 h-6 rounded-full inline-flex items-center justify-center mr-2 text-xs">🔒</span> Login Credentials</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><Input label="Login ID" value={newBuyer.loginId || ''} onChange={e => setNewBuyer({...newBuyer, loginId: e.target.value})} required /><Input label="Password" value={newBuyer.password || ''} onChange={e => setNewBuyer({...newBuyer, password: e.target.value})} required /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input label="Login ID" value={newBuyer.loginId || ''} onChange={e => setNewBuyer({...newBuyer, loginId: e.target.value})} required />
+                      <Input label="Password" value={newBuyer.password || ''} onChange={e => setNewBuyer({...newBuyer, password: e.target.value})} required />
+                    </div>
                 </div>
+                
                 <div>
                   <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">1. Personal Info</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -431,19 +455,33 @@
                     <Input label="Last Name" value={newBuyer.lastName || ''} onChange={e => setNewBuyer({...newBuyer, lastName: e.target.value})} required />
                     <Input label="Position" value={newBuyer.position || ''} onChange={e => setNewBuyer({...newBuyer, position: e.target.value})} />
                     <Input label="Mobile Number" value={newBuyer.mobile || ''} onChange={e => setNewBuyer({...newBuyer, mobile: e.target.value})} />
-                    <div className="col-span-1 md:col-span-2"><Input label="Email Address" type="email" value={newBuyer.email || ''} onChange={e => setNewBuyer({...newBuyer, email: e.target.value})} /></div>
+                    <Input label="Email Address" type="email" value={newBuyer.email || ''} onChange={e => setNewBuyer({...newBuyer, email: e.target.value})} />
+                    <Input label="Available Time Slots" value={newBuyer.timeSlots || ''} onChange={e => setNewBuyer({...newBuyer, timeSlots: e.target.value})} placeholder="e.g. 10:00~10:30..." />
                   </div>
                 </div>
+
                 <div>
                   <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">2. Company Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input label="Company Name" value={newBuyer.companyName || ''} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
+                    <Input label="Country" value={newBuyer.country || ''} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
                     <Input label="Company Website" value={newBuyer.website || ''} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
-                    <div className="col-span-1 md:col-span-2"><Input label="Company Address" value={newBuyer.address || ''} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} /></div>
-                    <Input label="Business Type" value={newBuyer.businessType || ''} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} />
-                    <div className="col-span-1 md:col-span-2"><Input isTextArea label="History with Korean products" value={newBuyer.history || ''} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} /></div>
+                    <Input label="Company Address" value={newBuyer.address || ''} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
+                    <div className="col-span-1 md:col-span-2">
+                      <Input label="Company Logo (Google Drive Image Link)" placeholder="https://drive.google.com/..." value={newBuyer.logoUrl || ''} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
+                    </div>
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">3. Business Interests</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <Input label="Business Type" value={newBuyer.businessType || ''} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} placeholder="e.g. Distributor, Retailer" />
+                    <Input label="Target Categories" value={newBuyer.targetCategories || ''} onChange={e => setNewBuyer({...newBuyer, targetCategories: e.target.value})} placeholder="e.g. Skincare, Green Bio..." />
+                    <Input isTextArea label="History with Korean products" value={newBuyer.history || ''} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} />
+                  </div>
+                </div>
+
                 <div className="pt-6 border-t flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white pb-2">
                   <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setIsAddBuyerModalOpen(false)}>Cancel</Button>
                   <Button type="submit" className="w-full sm:w-auto">Save Buyer</Button>
@@ -509,7 +547,7 @@
                         <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미상'}</p>
                         <div className="text-sm text-gray-600 space-y-1">
                           <p><span className="font-semibold text-gray-900">담당자:</span> {b.firstName} {b.lastName}</p>
-                          <p><span className="font-semibold text-gray-900">직책:</span> {b.position}</p>
+                          <p><span className="font-semibold text-gray-900">국가:</span> {b.country || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex flex-col gap-2">
@@ -571,17 +609,44 @@
 
           <Modal isOpen={!!selectedBuyerId} onClose={() => setSelectedBuyerId(null)} title="바이어 상세 프로필">
             {viewBuyer && (
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="bg-amber-50 p-5 sm:p-6 rounded-2xl border border-amber-100">
-                    <p className="font-bold text-amber-700 text-xs sm:text-sm mb-1 uppercase tracking-wider">Company Name</p>
-                    <p className="font-black text-2xl sm:text-3xl text-gray-900">{viewBuyer.companyName}</p>
+                <div className="space-y-4 sm:space-y-6 pb-4">
+                  {/* Buyer Profile Header with Logo */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+                     <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
+                        {viewBuyer.logoUrl ? <img src={formatDriveLink(viewBuyer.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                     </div>
+                     <div className="text-center sm:text-left z-10 flex-grow w-full">
+                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{viewBuyer.country || "Global"}</span>
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{viewBuyer.companyName}</h2>
+                        <p className="text-sm sm:text-lg text-gray-500 font-medium">{viewBuyer.firstName} {viewBuyer.lastName} / {viewBuyer.position}</p>
+                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-100"><p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">담당자 (Representative)</p><p className="font-bold text-base sm:text-lg text-gray-900">{viewBuyer.firstName} {viewBuyer.lastName}</p><p className="text-gray-600 text-xs sm:text-sm">{viewBuyer.position}</p></div>
-                    <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-100"><p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">비즈니스 유형 (Business Type)</p><p className="font-bold text-base sm:text-lg text-gray-900">{viewBuyer.businessType || "-"}</p></div>
-                    <div className="col-span-1 sm:col-span-2 bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-100"><p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">웹사이트 (Website)</p><a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-sm sm:text-base text-blue-600 hover:underline break-all">{viewBuyer.website || "-"}</a></div>
-                    <div className="col-span-1 sm:col-span-2 bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-100"><p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">한국 제품 협력 경험 (History with Korean Products)</p><p className="font-medium text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-wrap">{viewBuyer.history || "No data provided."}</p></div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Type</p>
+                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.businessType || "-"}</p>
+                     </div>
+                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
+                        <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{viewBuyer.website || "-"}</a>
+                     </div>
+                     <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Available Time Slots</p>
+                        <p className="font-bold text-gray-900 text-sm whitespace-pre-wrap">{viewBuyer.timeSlots || "미지정"}</p>
+                     </div>
                   </div>
+
+                  <div>
+                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> Target Categories</h4>
+                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap">{viewBuyer.targetCategories || "-"}</div>
+                  </div>
+
+                  <div>
+                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> History with Korean Products</h4>
+                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">{viewBuyer.history || "No data provided."}</div>
+                  </div>
+
                   <div className="bg-gray-100 text-gray-600 p-4 rounded-xl text-xs sm:text-sm text-center font-semibold mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-2">
                     <svg className="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                     보안 정책에 따라 개인 연락처(이메일, 휴대폰)는 블라인드 처리되었습니다.
@@ -640,8 +705,8 @@
                     </div>
                     <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
                       <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn}</h3>
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.nameEn}</p>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.businessArea || 'Korea Brand'}</p>
                         <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 leading-relaxed">{company.introEn || 'No introduction provided.'}</p>
                       </div>
                       <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
@@ -658,14 +723,14 @@
           {activeSubTab === 'incoming' && (
             <div className="animate-slide-up">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Incoming Pitches from Korean Brands</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Incoming Pitches from Brands</h2>
                 {pendingIncomingCount > 0 && <Button onClick={handleAcceptAllIncoming} variant="secondary" className="w-full sm:w-auto">✨ Accept All Pending</Button>}
               </div>
               <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Korean Company</th>
+                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Company</th>
                       <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -709,22 +774,53 @@
                       {selectedCompany.logoUrl ? <img src={formatDriveLink(selectedCompany.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
                    </div>
                    <div className="text-center sm:text-left z-10 flex-grow w-full">
-                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{selectedCompany.businessType || "Brand"}</span>
+                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{selectedCompany.country || "Korea"}</span>
                       <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{selectedCompany.brandEn}</h2>
                       <p className="text-sm sm:text-lg text-gray-500 font-medium">{selectedCompany.nameEn}</p>
                    </div>
                 </div>
 
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 sm:mb-4 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Brand Intro & Overview</h4>
-                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.introEn || "No introduction provided."}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Area</p>
+                      <p className="font-bold text-gray-900 text-sm">{selectedCompany.businessArea || "-"}</p>
+                   </div>
+                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
+                      <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
+                   </div>
+                   <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Available Time Slots</p>
+                      <p className="font-bold text-gray-900 text-sm whitespace-pre-wrap">{selectedCompany.timeSlots || "TBD"}</p>
+                   </div>
                 </div>
 
                 <div>
-                   <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 sm:mb-4 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
+                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Brand Intro & Overview</h4>
+                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.introEn || "-"}</div>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Competitiveness</h4>
+                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.competitiveness || "-"}</div>
+                </div>
+
+                <div>
+                   <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
                    <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
                       <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Pricing & MOQ details</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold whitespace-pre-wrap">{selectedCompany.moq || "Details not provided."}</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-semibold whitespace-pre-wrap leading-relaxed">{selectedCompany.products || selectedCompany.moq || "-"}</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
+                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Export Status</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.exportStatus || "-"}</p>
+                   </div>
+                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
+                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Target Buyer</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.targetBuyer || "-"}</p>
                    </div>
                 </div>
 
@@ -753,7 +849,7 @@
                          <Button onClick={() => handleRequestMeeting(selectedCompany.id)} className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base shadow-xl shadow-amber-200/50">🤝 Request a Meeting</Button>
                       ) : (
                          <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                           Status: <Badge status={currentMeeting.status} className="ml-2 sm:ml-3" />
+                            Status: <Badge status={currentMeeting.status} className="ml-2 sm:ml-3" />
                          </div>
                       )}
                     </div>
@@ -775,7 +871,6 @@
                  <span className="text-lg sm:text-2xl font-extrabold tracking-tight text-gray-900 truncate max-w-[160px] sm:max-w-none">ASEAN Market Expo</span>
               </div>
               <div className="flex items-center space-x-2 sm:space-x-6">
-                 {/* 모바일에서는 Role 뱃지 숨김 */}
                  <span className="hidden sm:inline-block text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 uppercase tracking-widest border border-gray-200">
                    Role: {sessionRole}
                  </span>
