@@ -150,9 +150,13 @@
 
     const formatDriveLink = (url) => {
       if(!url) return null;
-      if(url.includes('drive.google.com/file/d/')) {
-          const id = url.split('/d/')[1].split('/')[0];
-          return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+      if(url.includes('drive.google.com')) {
+          // 다양한 구글 드라이브 링크 포맷에서 고유 ID(일반적으로 25자 이상)만 지능적으로 추출
+          const match = url.match(/[-\w]{25,}/);
+          if (match && match[0]) {
+              // 썸네일 API 대신 외부 서비스 임베드에 가장 안정적인 uc API 사용
+              return `https://drive.google.com/uc?export=view&id=${match[0]}`;
+          }
       }
       return url;
     };
@@ -876,8 +880,13 @@
                       <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                          {images.map((img, idx) => (
-                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                               <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
+                               <img 
+                                  src={formatDriveLink(img)} 
+                                  alt={`Product ${idx+1}`} 
+                                  className="w-full h-full object-cover" 
+                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=Check+Link+Access'; }}
+                               />
                             </div>
                          ))}
                       </div>
@@ -1046,8 +1055,13 @@
                       <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                          {images.map((img, idx) => (
-                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                               <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
+                               <img 
+                                  src={formatDriveLink(img)} 
+                                  alt={`Product ${idx+1}`} 
+                                  className="w-full h-full object-cover" 
+                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=Check+Link+Access'; }}
+                               />
                             </div>
                          ))}
                       </div>
