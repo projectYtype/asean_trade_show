@@ -20,6 +20,7 @@
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
+      background-color: #f9fafb;
     }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 4px; }
@@ -126,8 +127,9 @@
           products: '• Taxifolin Plus Shampoo ($12 / MOQ 500개)\n• Orethistle Platinum ($12 / MOQ 500개)',
           exportStatus: '미국, 싱가포르, 홍콩, 베트남',
           targetBuyer: '미국 / 온·오프라인 몰 운영 바이어 및 벤더사',
-          productImagesLink: '',
-          productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: ''
+          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Dummy
+          productImagesLink: '', // Catalog
+          productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: '' // 5 images
         }
       ],
       buyers: [
@@ -153,6 +155,13 @@
           return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
       }
       return url;
+    };
+
+    const getYouTubeId = (url) => {
+      if (!url) return null;
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
     };
 
     const LoginView = ({ setSessionRole, setSessionData, showAlert, data }) => {
@@ -438,6 +447,7 @@
                   <Input isTextArea label="Products & MOQ" value={newCompany.products || ''} onChange={e => setNewCompany({...newCompany, products: e.target.value})} placeholder="• Taxifolin Plus Shampoo ($12 / MOQ 500개)" />
                   <Input label="Export Status" value={newCompany.exportStatus || ''} onChange={e => setNewCompany({...newCompany, exportStatus: e.target.value})} placeholder="e.g. 미국, 싱가포르, 홍콩, 베트남" />
                   <Input label="Target Buyer" value={newCompany.targetBuyer || ''} onChange={e => setNewCompany({...newCompany, targetBuyer: e.target.value})} placeholder="e.g. 미국 / 온·오프라인 몰 운영 바이어 및 벤더사" />
+                  <Input label="Promo Video (YouTube Link)" value={newCompany.youtubeUrl || ''} onChange={e => setNewCompany({...newCompany, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/watch?v=..." />
                   <Input label="Product Catalog / Brochure (Folder/PDF Link)" placeholder="Link to folder or PDF..." value={newCompany.productImagesLink || ''} onChange={e => setNewCompany({...newCompany, productImagesLink: e.target.value})} />
                   
                   <div className="bg-gray-100 p-4 rounded-xl space-y-4">
@@ -823,6 +833,22 @@
                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.competitiveness || "-"}</div>
                 </div>
 
+                {selectedCompany.youtubeUrl && getYouTubeId(selectedCompany.youtubeUrl) && (
+                  <div>
+                     <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Promotional Video</h4>
+                     <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-sm">
+                        <iframe 
+                            src={`https://www.youtube.com/embed/${getYouTubeId(selectedCompany.youtubeUrl)}`} 
+                            title="YouTube promotional video" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowFullScreen
+                            className="w-full h-full"
+                        ></iframe>
+                     </div>
+                  </div>
+                )}
+
                 <div>
                    <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
                    <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
@@ -842,19 +868,18 @@
                    </div>
                 </div>
 
-                {/* Product Images Gallery */}
                 {(() => {
                   const images = [selectedCompany.productImage1, selectedCompany.productImage2, selectedCompany.productImage3, selectedCompany.productImage4, selectedCompany.productImage5].filter(Boolean);
                   if (images.length === 0) return null;
                   return (
                     <div>
-                      <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Images</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                        {images.map((img, idx) => (
-                          <div key={idx} className="aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                            <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform" />
-                          </div>
-                        ))}
+                      <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                         {images.map((img, idx) => (
+                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                               <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                            </div>
+                         ))}
                       </div>
                     </div>
                   );
@@ -862,7 +887,7 @@
 
                 {selectedCompany.productImagesLink && (
                    <a href={selectedCompany.productImagesLink} target="_blank" rel="noreferrer" 
-                      className="block bg-blue-50/50 hover:bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-2xl text-center transition-all group shadow-sm">
+                      className="block bg-blue-50/50 hover:bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-2xl text-center transition-all group shadow-sm mt-4">
                       <p className="text-blue-700 font-extrabold text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2">
                         <svg className="w-5 h-5 sm:w-6 sm:h-6 transform group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                         <span className="text-center">Download / View Product Catalog</span>
@@ -902,91 +927,86 @@
       const [selectedCompany, setSelectedCompany] = useState(null);
 
       return (
-        <div className="animate-fade-in">
-          {/* Guest Poster Information Section */}
-          <div className="bg-[#FFFDF7] border-b border-amber-100">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 flex flex-col lg:flex-row items-center gap-12">
-              <div className="flex-1 space-y-6">
-                <div className="inline-block px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full tracking-widest uppercase">Upcoming Trade Show</div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 tracking-tighter leading-tight">
-                  2026 ASEAN KOREA <br className="hidden lg:block"/> BEAUTY TRADE SHOW
-                </h1>
-                <p className="text-lg sm:text-xl text-gray-600 font-medium">Supported by Seoul Business Agency (SBA).</p>
-                
-                <div className="pt-6 space-y-4">
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-900 mb-2 flex items-center"><span className="text-[#FDB827] mr-2">📍</span> Venues & Dates</h3>
-                    <ul className="text-sm text-gray-600 space-y-2">
-                      <li><strong className="text-gray-900">SINGAPORE</strong> | August 25 | York Hotel</li>
-                      <li><strong className="text-gray-900">JAKARTA, INDONESIA</strong> | August 27 | Kempinski Hotel Jakarta</li>
-                    </ul>
-                    <p className="text-xs text-gray-400 mt-2">*Note: Business meetings held at the venue. Accommodation and transportation are not provided.</p>
-                  </div>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in space-y-8">
+          
+          <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
+            <div className="bg-gradient-to-br from-[#FDB827] to-amber-300 p-8 sm:p-12 text-center relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+               <h2 className="relative z-10 text-3xl sm:text-5xl font-black text-gray-900 mb-4 tracking-tighter uppercase">2026 ASEAN KOREA<br/>BEAUTY TRADE SHOW</h2>
+               <p className="relative z-10 text-lg sm:text-2xl font-bold text-gray-800">Supported by Seoul Business Agency (SBA)</p>
+            </div>
+            
+            <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
+               <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900 mb-6 flex items-center"><span className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-3 text-lg">🎁</span> BUYER BENEFITS</h3>
+                  <ul className="space-y-4 text-gray-700 font-medium text-lg">
+                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> USD 100 Cash Provided On-site</li>
+                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Pre-arranged 1:1 B2B Meetings</li>
+                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Interpretation Support<br/><span className="text-sm text-gray-500 mt-1 block">(Korean-English / Korean-Indonesian)</span></li>
+                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Buffet Lunch Provided</li>
+                  </ul>
+               </div>
 
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-900 mb-2 flex items-center"><span className="text-[#FDB827] mr-2">🎁</span> Buyer Benefits</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>✓ USD 100 Cash Provided On-site</li>
-                      <li>✓ Pre-arranged 1:1 B2B Meetings</li>
-                      <li>✓ Interpretation Support (Korean-English/Indonesian)</li>
-                      <li>✓ Buffet Lunch Provided</li>
-                    </ul>
+               <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900 mb-6 flex items-center"><span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-lg">📍</span> VENUES & DATES</h3>
+                  <div className="space-y-6">
+                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                      <h4 className="font-black text-xl text-gray-900">SINGAPORE</h4>
+                      <p className="text-gray-600 font-medium mt-1">August 25 | York Hotel</p>
+                    </div>
+                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                      <h4 className="font-black text-xl text-gray-900">JAKARTA, INDONESIA</h4>
+                      <p className="text-gray-600 font-medium mt-1">August 27 | Kempinski Hotel Jakarta</p>
+                    </div>
                   </div>
-                </div>
+                  <p className="text-xs text-gray-400 mt-4 leading-tight">*Note: Business meetings held at the venue. Please note that accommodation and transportation are not provided.</p>
+               </div>
+            </div>
 
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">[ Administration Office ]</p>
-                  <p className="text-sm font-medium text-gray-800">WhatsApp: +82 10 8073 2332 | Email: sumin.parkl@koreabridging.com</p>
-                </div>
-              </div>
-
-              <div className="flex-1 w-full relative flex justify-center lg:justify-end">
-                <div className="w-64 h-64 sm:w-80 sm:h-80 bg-gradient-to-tr from-amber-200 to-amber-50 rounded-full flex items-center justify-center p-8 shadow-2xl relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/20 backdrop-blur-sm z-0"></div>
-                  <div className="text-center relative z-10 space-y-2">
-                    <p className="text-3xl sm:text-4xl font-black text-amber-600">08.25</p>
-                    <div className="w-8 border-b-2 border-amber-400 mx-auto"></div>
-                    <p className="text-3xl sm:text-4xl font-black text-amber-600">08.27</p>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-gray-900 text-white p-8 text-center">
+              <p className="text-amber-400 font-bold uppercase tracking-widest text-sm mb-2">[ Administration Office ]</p>
+              <p className="text-lg sm:text-xl font-medium">WhatsApp: <span className="font-bold">+82 10 8073 2332</span> | Email: <span className="font-bold text-amber-200">sumin.parkl@koreabridging.com</span></p>
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-            <div className="text-center mb-10 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Participating Korean Brands</h2>
-              <p className="text-gray-500 mt-2">Discover premium brands and request meetings by signing up.</p>
+          <div className="text-center py-6">
+            <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-black transition-all duration-300 rounded-2xl focus:outline-none focus:ring-4 focus:ring-offset-2 bg-[#FDB827] text-gray-900 hover:bg-[#e5a620] hover:shadow-2xl hover:-translate-y-1 focus:ring-[#FDB827] shadow-xl shadow-amber-200/50 uppercase tracking-wide">
+              🔥 SIGN UP AS A BUYER NOW
+            </a>
+          </div>
+
+          <div className="pt-8 sm:pt-12 border-t border-gray-200">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Participating K-Beauty Brands</h2>
+              <p className="text-gray-500 mt-2 font-medium">Discover premium green-bio and cosmetics companies from Korea.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
               {companies.map(company => (
-                <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col relative group cursor-pointer border-t-4 border-t-[#FDB827]">
+                <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col cursor-pointer border-t-4 border-t-blue-500 group">
                   <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-                    {company.logoUrl ? <img src={formatDriveLink(company.logoUrl)} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" /> : <span className="text-gray-400 font-bold tracking-widest uppercase text-xs sm:text-sm">No Logo</span>}
+                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
+                     {company.logoUrl ? <img src={formatDriveLink(company.logoUrl)} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" /> : <span className="text-gray-400 font-bold tracking-widest uppercase text-xs sm:text-sm">No Logo</span>}
                   </div>
                   <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
-                      <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.businessArea || 'Korea Brand'}</p>
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 leading-relaxed">{company.introEn || 'No introduction provided.'}</p>
-                    </div>
-                    <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
-                        View Profile Preview
-                        <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </div>
+                     <div>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.businessArea || 'Korea Brand'}</p>
+                     </div>
+                     <div className="mt-4 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
+                         View Profile <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                     </div>
                   </div>
                 </Card>
               ))}
             </div>
           </div>
 
-          <Modal isOpen={!!selectedCompany} onClose={() => setSelectedCompany(null)} title="Brand Profile Preview">
+          <Modal isOpen={!!selectedCompany} onClose={() => setSelectedCompany(null)} title="Brand Profile Overview">
             {selectedCompany && (
               <div className="space-y-6 sm:space-y-8 pb-4">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-[#FDB827]/10 rounded-bl-full -z-10"></div>
+                   <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-blue-50 rounded-bl-full -z-10"></div>
                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
                       {selectedCompany.logoUrl ? <img src={formatDriveLink(selectedCompany.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
                    </div>
@@ -997,81 +1017,51 @@
                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Area</p>
-                      <p className="font-bold text-gray-900 text-sm">{selectedCompany.businessArea || "-"}</p>
-                   </div>
-                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
-                      <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
-                   </div>
-                </div>
-
                 <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Brand Intro & Overview</h4>
+                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> Brand Intro & Overview</h4>
                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.introEn || "-"}</div>
                 </div>
 
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Competitiveness</h4>
-                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.competitiveness || "-"}</div>
-                </div>
+                {selectedCompany.youtubeUrl && getYouTubeId(selectedCompany.youtubeUrl) && (
+                  <div>
+                     <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Promotional Video</h4>
+                     <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-sm">
+                        <iframe 
+                            src={`https://www.youtube.com/embed/${getYouTubeId(selectedCompany.youtubeUrl)}`} 
+                            title="YouTube promotional video" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowFullScreen
+                            className="w-full h-full"
+                        ></iframe>
+                     </div>
+                  </div>
+                )}
 
-                <div>
-                   <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Pricing & MOQ details</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold whitespace-pre-wrap leading-relaxed">{selectedCompany.products || selectedCompany.moq || "-"}</p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Export Status</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.exportStatus || "-"}</p>
-                   </div>
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Target Buyer</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.targetBuyer || "-"}</p>
-                   </div>
-                </div>
-
-                {/* Product Images Gallery */}
                 {(() => {
                   const images = [selectedCompany.productImage1, selectedCompany.productImage2, selectedCompany.productImage3, selectedCompany.productImage4, selectedCompany.productImage5].filter(Boolean);
                   if (images.length === 0) return null;
                   return (
                     <div>
-                      <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Images</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                        {images.map((img, idx) => (
-                          <div key={idx} className="aspect-square bg-white rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center p-2 shadow-sm hover:shadow-md transition-shadow">
-                            <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform" />
-                          </div>
-                        ))}
+                      <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                         {images.map((img, idx) => (
+                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                               <img src={formatDriveLink(img)} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                            </div>
+                         ))}
                       </div>
                     </div>
                   );
                 })()}
 
-                {selectedCompany.productImagesLink && (
-                   <a href={selectedCompany.productImagesLink} target="_blank" rel="noreferrer" 
-                      className="block bg-blue-50/50 hover:bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-2xl text-center transition-all group shadow-sm">
-                      <p className="text-blue-700 font-extrabold text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2">
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6 transform group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        <span className="text-center">Download / View Product Catalog</span>
-                      </p>
-                   </a>
-                )}
-
-                <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
+                <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 p-6 rounded-2xl">
                     <div className="text-center sm:text-left">
                       <h4 className="font-extrabold text-lg sm:text-xl text-gray-900">Want to request a B2B meeting?</h4>
                       <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">Sign up as a buyer to contact this brand.</p>
                     </div>
                     <div className="w-full sm:w-auto">
-                      <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base font-semibold transition-all duration-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 bg-[#FDB827] text-gray-900 hover:bg-[#e5a620] hover:shadow-lg hover:-translate-y-0.5 focus:ring-[#FDB827] shadow-xl shadow-amber-200/50">
+                      <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base font-bold transition-all duration-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5">
                         Sign up as a Buyer
                       </a>
                     </div>
@@ -1079,6 +1069,7 @@
               </div>
             )}
           </Modal>
+
         </div>
       );
     };
@@ -1108,7 +1099,7 @@
             </div>
           </div>
         </nav>
-        <main className="flex-grow pb-12">{children}</main>
+        <main className="flex-grow pt-4 sm:pt-6 pb-12">{children}</main>
       </div>
     );
 
