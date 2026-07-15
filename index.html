@@ -148,17 +148,40 @@
       meetings: []
     };
 
-    const formatDriveLink = (url) => {
+    const getDriveId = (url) => {
       if(!url) return null;
-      if(url.includes('drive.google.com')) {
-          // 다양한 구글 드라이브 링크 포맷에서 고유 ID(일반적으로 25자 이상)만 지능적으로 추출
-          const match = url.match(/[-\w]{25,}/);
-          if (match && match[0]) {
-              // 썸네일 API 대신 외부 서비스 임베드에 가장 안정적인 uc API 사용
-              return `https://drive.google.com/uc?export=view&id=${match[0]}`;
-          }
-      }
-      return url;
+      if(url.includes('/file/d/')) return url.split('/file/d/')[1].split('/')[0];
+      if(url.includes('id=')) return url.split('id=')[1].split('&')[0];
+      const match = url.match(/[-\w]{25,}/);
+      return match ? match[0] : null;
+    };
+
+    const DriveImage = ({ url, alt, className, fallbackText = "No Image" }) => {
+        const driveId = getDriveId(url);
+
+        const primarySrc = React.useMemo(() => {
+            if(!url) return null;
+            if(url.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i)) return url;
+            if(url.match(/\.(ai|eps|psd|pdf)(\?.*)?$/i)) return `https://placehold.co/400x400/FDB827/ffffff?text=${url.split('.').pop().split('?')[0].toUpperCase()}+File`;
+            if (driveId) return `https://lh3.googleusercontent.com/d/${driveId}=w800-h800-rw`; // 1차 시도: PNG/JPG 고화질 렌더링
+            return url;
+        }, [url, driveId]);
+
+        const handleError = (e) => {
+            if (driveId && !e.target.dataset.fallback) {
+                // 1차 렌더링 실패 (.ai 등) 시, 2차 썸네일 엔진으로 자동 전환
+                e.target.dataset.fallback = 'true';
+                e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+            } else {
+                // 권한 오류 등으로 2차 렌더링도 실패 시 안전하게 대체 이미지 표시
+                e.target.onerror = null;
+                e.target.src = `https://placehold.co/400x400/f1f5f9/94a3b8?text=${fallbackText.replace(/ /g, '+')}`;
+            }
+        };
+
+        if (!primarySrc) return <span className="text-gray-400 font-bold tracking-widest uppercase text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">{fallbackText}</span>;
+
+        return <img src={primarySrc} alt={alt} className={className} onError={handleError} />;
     };
 
     const getYouTubeId = (url) => {
@@ -166,6 +189,31 @@
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       const match = url.match(regExp);
       return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const VideoPlayer = ({ url }) => {
+      if (!url) return null;
+      
+      const ytId = getYouTubeId(url);
+      const driveId = getDriveId(url);
+      const isDirect = url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+
+      if (!ytId && !driveId && !isDirect) return null;
+
+      return (
+        <div>
+           <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Promotional Video</h4>
+           <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-sm relative">
+              {ytId ? (
+                  <iframe src={`https://www.youtube.com/embed/${ytId}`} title="YouTube video" className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+              ) : driveId ? (
+                  <iframe src={`https://drive.google.com/file/d/${driveId}/preview`} title="Google Drive video" className="w-full h-full" frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe>
+              ) : isDirect ? (
+                  <video src={url} controls playsInline className="w-full h-full object-contain bg-black"></video>
+              ) : null}
+           </div>
+        </div>
+      );
     };
 
     const LoginView = ({ setSessionRole, setSessionData, showAlert, data }) => {
@@ -428,7 +476,7 @@
                   <Input label="Country" value={newCompany.country || ''} onChange={e => setNewCompany({...newCompany, country: e.target.value})} placeholder="e.g. 한국" />
                   <Input label="Website" value={newCompany.website || ''} onChange={e => setNewCompany({...newCompany, website: e.target.value})} />
                   <div className="col-span-1 md:col-span-2">
-                    <Input label="Brand Logo (Google Drive Image Link)" placeholder="https://drive.google.com/..." value={newCompany.logoUrl || ''} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} />
+                    <Input label="Brand Logo (Google Drive or .png/.jpg/.ai Link)" placeholder="https://drive.google.com/... or https://.../logo.ai" value={newCompany.logoUrl || ''} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} />
                   </div>
                 </div>
               </div>
@@ -451,11 +499,11 @@
                   <Input isTextArea label="Products & MOQ" value={newCompany.products || ''} onChange={e => setNewCompany({...newCompany, products: e.target.value})} placeholder="• Taxifolin Plus Shampoo ($12 / MOQ 500개)" />
                   <Input label="Export Status" value={newCompany.exportStatus || ''} onChange={e => setNewCompany({...newCompany, exportStatus: e.target.value})} placeholder="e.g. 미국, 싱가포르, 홍콩, 베트남" />
                   <Input label="Target Buyer" value={newCompany.targetBuyer || ''} onChange={e => setNewCompany({...newCompany, targetBuyer: e.target.value})} placeholder="e.g. 미국 / 온·오프라인 몰 운영 바이어 및 벤더사" />
-                  <Input label="Promo Video (YouTube Link)" value={newCompany.youtubeUrl || ''} onChange={e => setNewCompany({...newCompany, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/watch?v=..." />
+                  <Input label="Promo Video (YouTube / G-Drive / MP4 Link)" value={newCompany.youtubeUrl || ''} onChange={e => setNewCompany({...newCompany, youtubeUrl: e.target.value})} placeholder="https://www.youtube.com/... or https://drive.google.com/..." />
                   <Input label="Product Catalog / Brochure (Folder/PDF Link)" placeholder="Link to folder or PDF..." value={newCompany.productImagesLink || ''} onChange={e => setNewCompany({...newCompany, productImagesLink: e.target.value})} />
                   
                   <div className="bg-gray-100 p-4 rounded-xl space-y-4">
-                    <p className="font-bold text-sm text-gray-700">Individual Product Images (Google Drive Image Links - Up to 5)</p>
+                    <p className="font-bold text-sm text-gray-700">Individual Product Images (Google Drive Image Links - Supports .ai, .jpg, .png)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input label="Product Image 1" value={newCompany.productImage1 || ''} onChange={e => setNewCompany({...newCompany, productImage1: e.target.value})} placeholder="https://drive.google.com/..." />
                       <Input label="Product Image 2" value={newCompany.productImage2 || ''} onChange={e => setNewCompany({...newCompany, productImage2: e.target.value})} />
@@ -505,7 +553,7 @@
                     <Input label="Company Website" value={newBuyer.website || ''} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
                     <Input label="Company Address" value={newBuyer.address || ''} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
                     <div className="col-span-1 md:col-span-2">
-                      <Input label="Company Logo (Google Drive Image Link)" placeholder="https://drive.google.com/..." value={newBuyer.logoUrl || ''} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
+                      <Input label="Company Logo (Google Drive or .png/.jpg/.ai Link)" placeholder="https://drive.google.com/... or https://.../logo.ai" value={newBuyer.logoUrl || ''} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
                     </div>
                   </div>
                 </div>
@@ -649,7 +697,11 @@
                 <div className="space-y-4 sm:space-y-6 pb-4">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
                      <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
-                        {viewBuyer.logoUrl ? <img src={formatDriveLink(viewBuyer.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                        {viewBuyer.logoUrl ? (
+                           <a href={viewBuyer.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
+                              <DriveImage url={viewBuyer.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
+                           </a>
+                        ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
                      </div>
                      <div className="text-center sm:text-left z-10 flex-grow w-full">
                         <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{viewBuyer.country || "Global"}</span>
@@ -737,7 +789,7 @@
                     {compMeeting && <div className="absolute top-4 right-4 z-10"><Badge status={compMeeting.status} /></div>}
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-                      {company.logoUrl ? <img src={formatDriveLink(company.logoUrl)} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" /> : <span className="text-gray-400 font-bold tracking-widest uppercase text-xs sm:text-sm">No Logo</span>}
+                      <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
                     </div>
                     <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
                       <div>
@@ -807,7 +859,11 @@
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
                    <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-[#FDB827]/10 rounded-bl-full -z-10"></div>
                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
-                      {selectedCompany.logoUrl ? <img src={formatDriveLink(selectedCompany.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                      {selectedCompany.logoUrl ? (
+                         <a href={selectedCompany.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
+                            <DriveImage url={selectedCompany.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
+                         </a>
+                      ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
                    </div>
                    <div className="text-center sm:text-left z-10 flex-grow w-full">
                       <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{selectedCompany.country || "Korea"}</span>
@@ -837,21 +893,7 @@
                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.competitiveness || "-"}</div>
                 </div>
 
-                {selectedCompany.youtubeUrl && getYouTubeId(selectedCompany.youtubeUrl) && (
-                  <div>
-                     <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Promotional Video</h4>
-                     <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-sm">
-                        <iframe 
-                            src={`https://www.youtube.com/embed/${getYouTubeId(selectedCompany.youtubeUrl)}`} 
-                            title="YouTube promotional video" 
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowFullScreen
-                            className="w-full h-full"
-                        ></iframe>
-                     </div>
-                  </div>
-                )}
+                <VideoPlayer url={selectedCompany.youtubeUrl} />
 
                 <div>
                    <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
@@ -880,14 +922,17 @@
                       <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                          {images.map((img, idx) => (
-                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
-                               <img 
-                                  src={formatDriveLink(img)} 
+                            <a href={img} target="_blank" rel="noreferrer" key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative block group cursor-pointer">
+                               <DriveImage 
+                                  url={img} 
                                   alt={`Product ${idx+1}`} 
-                                  className="w-full h-full object-cover" 
-                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=Check+Link+Access'; }}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                  fallbackText="Click to View Image"
                                />
-                            </div>
+                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                  <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                               </div>
+                            </a>
                          ))}
                       </div>
                     </div>
@@ -995,7 +1040,7 @@
                 <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col cursor-pointer border-t-4 border-t-blue-500 group">
                   <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-                     {company.logoUrl ? <img src={formatDriveLink(company.logoUrl)} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" /> : <span className="text-gray-400 font-bold tracking-widest uppercase text-xs sm:text-sm">No Logo</span>}
+                     <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
                   </div>
                   <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
                      <div>
@@ -1017,7 +1062,11 @@
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
                    <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-blue-50 rounded-bl-full -z-10"></div>
                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
-                      {selectedCompany.logoUrl ? <img src={formatDriveLink(selectedCompany.logoUrl)} alt="logo" className="object-contain w-full h-full" /> : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                      {selectedCompany.logoUrl ? (
+                         <a href={selectedCompany.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
+                            <DriveImage url={selectedCompany.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
+                         </a>
+                      ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
                    </div>
                    <div className="text-center sm:text-left z-10 flex-grow w-full">
                       <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{selectedCompany.country || "Korea"}</span>
@@ -1031,21 +1080,7 @@
                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.introEn || "-"}</div>
                 </div>
 
-                {selectedCompany.youtubeUrl && getYouTubeId(selectedCompany.youtubeUrl) && (
-                  <div>
-                     <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Promotional Video</h4>
-                     <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-sm">
-                        <iframe 
-                            src={`https://www.youtube.com/embed/${getYouTubeId(selectedCompany.youtubeUrl)}`} 
-                            title="YouTube promotional video" 
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowFullScreen
-                            className="w-full h-full"
-                        ></iframe>
-                     </div>
-                  </div>
-                )}
+                <VideoPlayer url={selectedCompany.youtubeUrl} />
 
                 {(() => {
                   const images = [selectedCompany.productImage1, selectedCompany.productImage2, selectedCompany.productImage3, selectedCompany.productImage4, selectedCompany.productImage5].filter(Boolean);
@@ -1055,14 +1090,17 @@
                       <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                          {images.map((img, idx) => (
-                            <div key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
-                               <img 
-                                  src={formatDriveLink(img)} 
+                            <a href={img} target="_blank" rel="noreferrer" key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative block group cursor-pointer">
+                               <DriveImage 
+                                  url={img} 
                                   alt={`Product ${idx+1}`} 
-                                  className="w-full h-full object-cover" 
-                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=Check+Link+Access'; }}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                  fallbackText="Click to View Image"
                                />
-                            </div>
+                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                  <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                               </div>
+                            </a>
                          ))}
                       </div>
                     </div>
