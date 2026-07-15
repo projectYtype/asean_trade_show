@@ -273,17 +273,24 @@
                   <Button type="submit" className="w-full text-base py-3 sm:py-3.5 mt-2 shadow-xl shadow-[#FDB827]/40">Sign In to Dashboard</Button>
                 </form>
                 
-                <div className="mt-6 pt-6 border-t border-gray-200/60">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
+                <div className="mt-8 pt-8 border-t-2 border-dashed border-gray-200">
+                  <div className="text-center mb-4">
+                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-black uppercase tracking-widest shadow-sm animate-bounce">New Buyer?</span>
+                  </div>
+                  <button 
+                    type="button"
                     onClick={() => {
                       setSessionRole('guest');
                       setSessionData({ id: 'guest', name: 'Guest Viewer' });
                     }}
+                    className="w-full flex flex-col items-center justify-center px-4 py-4 sm:py-5 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-300 group"
                   >
-                    Guest View / Sign Up Information
-                  </Button>
+                    <span className="text-lg sm:text-xl font-black tracking-wide flex items-center group-hover:text-[#FDB827] transition-colors">
+                      👀 Explore Expo & Sign Up
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 ml-2 transform group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-400 mt-1.5">Click here to browse brands and register</span>
+                  </button>
                 </div>
               </Card>
             </div>
