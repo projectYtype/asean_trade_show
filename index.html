@@ -326,6 +326,17 @@
       const { companies = [], buyers = [], meetings = [] } = data || {};
       const [activeTab, setActiveTab] = useState('companies');
 
+      const [viewingCompany, setViewingCompany] = useState(null);
+      const [viewingBuyer, setViewingBuyer] = useState(null);
+
+      // 상세 정보 표시용 헬퍼 컴포넌트
+      const DetailRow = ({ label, value }) => (
+        <div className="py-3 border-b border-gray-100 flex flex-col sm:flex-row gap-1 sm:gap-4 last:border-0">
+          <span className="text-xs sm:text-sm font-bold text-gray-500 w-full sm:w-1/3 break-keep">{label}</span>
+          <span className="text-sm text-gray-900 w-full sm:w-2/3 whitespace-pre-wrap break-all">{value || '-'}</span>
+        </div>
+      );
+
       // 기업 전체 스키마 적용
       const initialComp = { loginId: '', password: '', nameEn: '', brandEn: '', country: '', website: '', logoUrl: '', contactName: '', contactPhone: '', contactEmail: '', businessArea: '', introEn: '', competitiveness: '', products: '', exportStatus: '', targetBuyer: '', productImagesLink: '', productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: '', youtubeUrl: '' };
       const [isAddCompModal, setIsAddCompModal] = useState(false);
@@ -387,7 +398,7 @@
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                   <h2 className="text-lg font-bold text-gray-900">등록된 기업 ({companies.length})</h2>
-                  <Button onClick={() => setIsAddCompModal(true)} className="w-full sm:w-auto shadow-sm">새 기업 추가</Button>
+                  <Button onClick={() => setIsAddCompModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 기업 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -405,6 +416,7 @@
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.loginId}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{c.brandEn || c.nameEn}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button onClick={() => setViewingCompany(c)} className="text-blue-600 font-bold hover:underline mr-3 sm:mr-4">상세 보기</button>
                             <button onClick={() => deleteCompany(c.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
@@ -418,7 +430,7 @@
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                   <h2 className="text-lg font-bold text-gray-900">등록된 바이어 ({buyers.length})</h2>
-                  <Button onClick={() => setIsAddBuyerModal(true)} className="w-full sm:w-auto shadow-sm">새 바이어 추가</Button>
+                  <Button onClick={() => setIsAddBuyerModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 바이어 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -436,6 +448,7 @@
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{b.loginId}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{b.companyName} ({b.firstName} {b.lastName})</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button onClick={() => setViewingBuyer(b)} className="text-blue-600 font-bold hover:underline mr-3 sm:mr-4">상세 보기</button>
                             <button onClick={() => deleteBuyer(b.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
@@ -608,449 +621,61 @@
             </form>
           </Modal>
 
-        </div>
-      );
-    };
-
-    const CompanyDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
-      const { meetings = [], buyers = [] } = data || {};
-      const [activeSubTab, setActiveSubTab] = useState('directory'); 
-      const [selectedBuyerId, setSelectedBuyerId] = useState(null);
-
-      const myIncomingRequests = meetings.filter(m => m.companyId === sessionData.id && m.requestedBy === 'buyer');
-      const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
-
-      const handleAccept = (id) => { setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'accepted' } : m) })); showAlert("미팅이 수락되었습니다."); };
-      const handleDecline = (id) => showConfirm("이 미팅을 거절하시겠습니까?", () => setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'declined' } : m) })));
-      const handleAcceptAll = () => showConfirm("대기 중인 모든 미팅을 수락하시겠습니까?", () => {
-          setData(prev => ({ ...prev, meetings: prev.meetings.map(m => (m.companyId === sessionData.id && m.status === 'pending' && m.requestedBy === 'buyer') ? { ...m, status: 'accepted' } : m) }));
-          showAlert("모든 대기 요청이 수락되었습니다.");
-      });
-      const handleRequestMeetingWithBuyer = (buyerId) => {
-        setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId, companyId: sessionData.id, status: 'pending', requestedBy: 'company' }] }));
-        showAlert("바이어에게 미팅 신청이 전송되었습니다.");
-      };
-
-      const viewBuyer = buyers.find(b => b.id === selectedBuyerId);
-      const myMtgWithViewBuyer = viewBuyer ? meetings.find(m => m.companyId === sessionData.id && m.buyerId === viewBuyer.id) : null;
-
-      return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 sm:mb-8 gap-4 sm:gap-6 border-b border-gray-200 pb-4 sm:pb-6">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">기업 대시보드</h1>
-                <p className="text-gray-500 font-medium flex items-center text-sm sm:text-base">
-                  <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-sm font-bold mr-2 sm:mr-3">{sessionData.brandEn}</span> 환영합니다.
-                </p>
+          <Modal isOpen={!!viewingCompany} onClose={() => setViewingCompany(null)} title="🏢 기업 상세 정보 조회">
+            {viewingCompany && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 mb-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <DetailRow label="로그인 ID" value={viewingCompany.loginId} />
+                <DetailRow label="비밀번호" value={viewingCompany.password} />
+                <DetailRow label="법인명 (nameEn)" value={viewingCompany.nameEn} />
+                <DetailRow label="브랜드명 (brandEn)" value={viewingCompany.brandEn} />
+                <DetailRow label="국가 (country)" value={viewingCompany.country} />
+                <DetailRow label="비즈니스 분야" value={viewingCompany.businessArea} />
+                <DetailRow label="웹사이트" value={viewingCompany.website} />
+                <DetailRow label="담당자명" value={viewingCompany.contactName} />
+                <DetailRow label="담당자 연락처" value={viewingCompany.contactPhone} />
+                <DetailRow label="담당자 이메일" value={viewingCompany.contactEmail} />
+                <DetailRow label="회사 소개 (introEn)" value={viewingCompany.introEn} />
+                <DetailRow label="경쟁력 (competitiveness)" value={viewingCompany.competitiveness} />
+                <DetailRow label="제품 정보 (products)" value={viewingCompany.products} />
+                <DetailRow label="수출 현황" value={viewingCompany.exportStatus} />
+                <DetailRow label="타겟 바이어" value={viewingCompany.targetBuyer} />
+                <DetailRow label="유튜브 URL" value={viewingCompany.youtubeUrl} />
+                <DetailRow label="로고 URL" value={viewingCompany.logoUrl} />
               </div>
-              <div className="flex bg-gray-100/50 p-1 rounded-xl border border-gray-200 w-full md:w-auto overflow-x-auto hide-scrollbar">
-                <button onClick={() => setActiveSubTab('directory')} className={`flex-1 md:flex-none whitespace-nowrap px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'directory' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                  👥 바이어 탐색
-                </button>
-                <button onClick={() => setActiveSubTab('requests')} className={`flex-1 md:flex-none whitespace-nowrap relative px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'requests' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                  📨 받은 요청 {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
-                </button>
-              </div>
-          </div>
-
-          {activeSubTab === 'directory' && (
-            <div className="animate-slide-up">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {buyers.length === 0 && <div className="col-span-3 text-center py-10 text-gray-500 font-bold">등록된 바이어 정보가 없습니다. (구글 시트 연동을 확인해주세요)</div>}
-                {buyers.map(b => {
-                  const myMtg = meetings.find(m => m.companyId === sessionData.id && m.buyerId === b.id);
-                  return (
-                    <Card key={b.id} hover onClick={() => setSelectedBuyerId(b.id)} className="flex flex-col overflow-visible group">
-                      <div className="p-5 sm:p-6 flex-grow">
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
-                          {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
-                        </div>
-                        {/* 명확한 구글 시트 변수 매핑 */}
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
-                          <p><span className="font-semibold text-gray-900">국가:</span> {b.country || '미입력'}</p>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex flex-col gap-2">
-                        {!myMtg ? (
-                          <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(b.id); }} className="w-full relative z-10 shadow-sm">미팅 신청하기</Button>
-                        ) : (
-                          <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
-                            {myMtg.requestedBy === 'company' ? '내가 신청한 미팅입니다.' : '바이어가 신청한 미팅입니다.'}
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeSubTab === 'requests' && (
-            <div className="animate-slide-up">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">바이어 미팅 요청 내역</h2>
-              {myIncomingRequests.length === 0 ? <p className="text-gray-500">받은 요청이 없습니다.</p> : (
-                  <div className="space-y-4">
-                     {myIncomingRequests.map(m => {
-                         const b = buyers.find(buyer => buyer.id === m.buyerId);
-                         return (
-                            <div key={m.id} className="bg-white p-4 rounded-xl border flex justify-between items-center">
-                               <div>
-                                  <p className="font-bold text-lg">{b?.companyName}</p>
-                                  <Badge status={m.status} />
-                               </div>
-                               {m.status === 'pending' && (
-                                   <div className="flex gap-2">
-                                       <Button onClick={() => handleAccept(m.id)}>수락</Button>
-                                       <Button variant="ghost" onClick={() => handleDecline(m.id)}>거절</Button>
-                                   </div>
-                               )}
-                            </div>
-                         )
-                     })}
-                  </div>
-              )}
-            </div>
-          )}
-
-          <Modal isOpen={!!selectedBuyerId} onClose={() => setSelectedBuyerId(null)} title="바이어 상세 프로필">
-            {viewBuyer && (
-                <div className="space-y-6 sm:space-y-8 pb-6">
-                  {/* Hero Section */}
-                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-                     <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-blue-50/50 rounded-bl-full -z-10"></div>
-                     <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center p-4 flex-shrink-0 z-10">
-                        {viewBuyer.logoUrl ? (
-                           <a href={viewBuyer.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
-                              <DriveImage url={viewBuyer.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="로고 없음" />
-                           </a>
-                        ) : <span className="text-gray-300 text-xs uppercase font-bold tracking-widest text-center">로고 없음</span>}
-                     </div>
-                     <div className="text-center sm:text-left z-10 flex-grow w-full pt-2">
-                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-extrabold uppercase tracking-widest rounded-lg mb-3">{viewBuyer.country || "글로벌"}</span>
-                        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2 tracking-tight">{viewBuyer.companyName || "미입력"}</h2>
-                        <p className="text-base sm:text-lg text-gray-500 font-medium">{viewBuyer.firstName} {viewBuyer.lastName} <span className="mx-2 text-gray-300">|</span> <span className="text-blue-600">{viewBuyer.position}</span></p>
-                     </div>
-                  </div>
-
-                  {/* Fact Sheet - Using exact camelCase variables given by user */}
-                  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                     <h4 className="font-black text-gray-900 text-lg mb-6 flex items-center border-b border-gray-100 pb-4">
-                        <span className="text-blue-500 mr-2 text-xl">📌</span> 핵심 정보 (At a Glance)
-                     </h4>
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
-                        <div>
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">비즈니스 유형</p>
-                           <p className="font-bold text-gray-900 text-base">{viewBuyer.businessType || "-"}</p>
-                        </div>
-                        <div>
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">직원 수</p>
-                           <p className="font-bold text-gray-900 text-base">{viewBuyer.employees ? `${viewBuyer.employees} 명` : "-"}</p>
-                        </div>
-                        <div>
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">설립 연도</p>
-                           <p className="font-bold text-gray-900 text-base">{viewBuyer.establishedYear ? `${viewBuyer.establishedYear}년` : "-"}</p>
-                        </div>
-                        <div>
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">연 매출</p>
-                           <p className="font-bold text-gray-900 text-base">{viewBuyer.annualRevenue || "-"}</p>
-                        </div>
-                        
-                        <div className="col-span-2">
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">공식 이메일</p>
-                           <a href={`mailto:${viewBuyer.officialEmail}`} className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.officialEmail || "미입력"}</a>
-                        </div>
-                        <div className="col-span-2">
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">웹사이트</p>
-                           <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.website || "-"}</a>
-                        </div>
-                        
-                        <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                           <p className="font-bold text-[11px] text-gray-500 uppercase tracking-widest mb-2 flex items-center"><span className="mr-2">📍</span>회사 주소</p>
-                           <p className="font-semibold text-gray-800 text-sm whitespace-pre-wrap">{viewBuyer.address || "미입력"}</p>
-                        </div>
-                        <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                           <p className="font-bold text-[11px] text-gray-500 uppercase tracking-widest mb-2 flex items-center"><span className="mr-2">🕒</span>미팅 가능 시간</p>
-                           <p className="font-semibold text-gray-800 text-sm whitespace-pre-wrap">{viewBuyer.timeSlots || "미지정"}</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Long Text Sections */}
-                  <div className="space-y-6">
-                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🏢</span> 회사 소개</h4>
-                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose">{viewBuyer.companyIntro || "입력된 정보가 없습니다."}</div>
-                     </div>
-
-                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🎯</span> 관심 (타겟) 카테고리</h4>
-                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50">{viewBuyer.targetCategories || "입력된 정보가 없습니다."}</div>
-                     </div>
-
-                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">💼</span> 한국 기업과의 거래 이력</h4>
-                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose">{viewBuyer.history || "입력된 정보가 없습니다."}</div>
-                     </div>
-                  </div>
-
-                  <div className="bg-gray-100 text-gray-600 p-4 rounded-xl text-xs sm:text-sm text-center font-semibold mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-2">
-                    <svg className="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    보안 정책에 따라 개인 연락처(이메일, 휴대폰)는 블라인드 처리되었습니다.
-                  </div>
-
-                  {/* Meeting Request Action inside Modal */}
-                  <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
-                      <div className="text-center sm:text-left">
-                        <h4 className="font-extrabold text-lg sm:text-xl text-gray-900">이 바이어와 미팅을 원하시나요?</h4>
-                        <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">지금 바로 플랫폼을 통해 미팅을 제안해보세요.</p>
-                      </div>
-                      <div className="w-full sm:w-auto">
-                        {!myMtgWithViewBuyer ? (
-                           <Button onClick={() => handleRequestMeetingWithBuyer(viewBuyer.id)} className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base shadow-xl shadow-amber-200/50">미팅 신청하기</Button>
-                        ) : (
-                           <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                              상태: <Badge status={myMtgWithViewBuyer.status} className="ml-2 sm:ml-3" />
-                           </div>
-                        )}
-                      </div>
-                  </div>
-
-                </div>
             )}
+            <div className="flex justify-end mt-2">
+              <Button onClick={() => setViewingCompany(null)} variant="secondary">닫기</Button>
+            </div>
           </Modal>
-        </div>
-      );
-    };
 
-    const BuyerDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
-      const { companies = [], meetings = [] } = data || {};
-      const [selectedCompany, setSelectedCompany] = useState(null);
-      const [activeSubTab, setActiveSubTab] = useState('directory');
-
-      const myIncomingRequests = meetings.filter(m => m.buyerId === sessionData.id && m.requestedBy === 'company');
-      const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
-
-      const handleRequestMeeting = (companyId) => { setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: sessionData.id, companyId, status: 'pending', requestedBy: 'buyer' }] })); showAlert("Meeting request sent successfully."); };
-      const handleAcceptMtg = (id) => { setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'accepted' } : m) })); showAlert("Meeting accepted."); };
-      const handleDeclineMtg = (id) => showConfirm("Decline this meeting request?", () => setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'declined' } : m) })));
-      const handleAcceptAllIncoming = () => showConfirm("Accept all pending meeting requests?", () => { setData(prev => ({ ...prev, meetings: prev.meetings.map(m => (m.buyerId === sessionData.id && m.status === 'pending' && m.requestedBy === 'company') ? { ...m, status: 'accepted' } : m) })); showAlert("All requests accepted!"); });
-
-      const currentMeeting = meetings.find(m => m.buyerId === sessionData.id && m.companyId === selectedCompany?.id);
-
-      return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 sm:mb-8 gap-4 sm:gap-6 border-b border-gray-200 pb-4 sm:pb-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Buyer Dashboard</h1>
-              <p className="text-gray-500 font-medium flex items-center text-sm sm:text-base">
-                 Welcome back, <span className="text-gray-900 font-bold ml-1">{sessionData.firstName} {sessionData.lastName}</span>
-              </p>
-            </div>
-            <div className="flex bg-gray-100/50 p-1 rounded-xl border border-gray-200 w-full md:w-auto overflow-x-auto hide-scrollbar">
-              <button onClick={() => setActiveSubTab('directory')} className={`flex-1 md:flex-none whitespace-nowrap px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'directory' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                🏢 Browse Companies
-              </button>
-              <button onClick={() => setActiveSubTab('incoming')} className={`flex-1 md:flex-none whitespace-nowrap relative px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'incoming' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                📨 Incoming Pitches {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
-              </button>
-            </div>
-          </div>
-
-          {activeSubTab === 'directory' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8 animate-slide-up">
-              {companies.map(company => {
-                const compMeeting = meetings.find(m => m.buyerId === sessionData.id && m.companyId === company.id);
-                return (
-                  <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col relative group cursor-pointer border-t-4 border-t-[#FDB827]">
-                    {compMeeting && <div className="absolute top-4 right-4 z-10"><Badge status={compMeeting.status} /></div>}
-                    <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-                      <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
-                    </div>
-                    <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.businessArea || 'Korea Brand'}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 leading-relaxed">{company.introEn || 'No introduction provided.'}</p>
-                      </div>
-                      <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
-                         View Full Profile
-                         <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                      </div>
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-
-          {activeSubTab === 'incoming' && (
-            <div className="animate-slide-up">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Incoming Pitches from Brands</h2>
-                {pendingIncomingCount > 0 && <Button onClick={handleAcceptAllIncoming} variant="secondary" className="w-full sm:w-auto">✨ Accept All Pending</Button>}
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Company</th>
-                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {myIncomingRequests.length === 0 && <tr><td colSpan="3" className="px-6 py-16 text-center text-gray-400 font-medium">No active pitches from companies.</td></tr>}
-                    {myIncomingRequests.map(m => {
-                      const comp = companies.find(c => c.id === m.companyId);
-                      return (
-                        <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
-                            <button onClick={() => setSelectedCompany(comp)} className="text-left group">
-                              <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{comp?.brandEn || 'Unknown'}</span>
-                              <span className="text-xs sm:text-sm text-gray-500 mt-1">Review Profile &rarr;</span>
-                            </button>
-                          </td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} /></td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
-                            {m.status === 'pending' && (
-                              <>
-                                <Button onClick={() => handleAcceptMtg(m.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 ring-0 px-3 py-1.5 sm:px-5 sm:py-2.5">Accept</Button>
-                                <Button onClick={() => handleDeclineMtg(m.id)} variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 sm:px-5 sm:py-2.5">Decline</Button>
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <Modal isOpen={!!selectedCompany} onClose={() => setSelectedCompany(null)} title="Brand Profile">
-            {selectedCompany && (
-              <div className="space-y-6 sm:space-y-8 pb-4">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-[#FDB827]/10 rounded-bl-full -z-10"></div>
-                   <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
-                      {selectedCompany.logoUrl ? (
-                         <a href={selectedCompany.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
-                            <DriveImage url={selectedCompany.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
-                         </a>
-                      ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
-                   </div>
-                   <div className="text-center sm:text-left z-10 flex-grow w-full">
-                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{selectedCompany.country || "Korea"}</span>
-                      <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{selectedCompany.brandEn}</h2>
-                      <p className="text-sm sm:text-lg text-gray-500 font-medium">{selectedCompany.nameEn}</p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Area</p>
-                      <p className="font-bold text-gray-900 text-sm">{selectedCompany.businessArea || "-"}</p>
-                   </div>
-                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
-                      <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
-                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Brand Intro & Overview</h4>
-                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.introEn || "-"}</div>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Competitiveness</h4>
-                  <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedCompany.competitiveness || "-"}</div>
-                </div>
-
-                <VideoPlayer url={selectedCompany.youtubeUrl} />
-
-                <div>
-                   <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Products & Capacity</h4>
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Pricing & MOQ details</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold whitespace-pre-wrap leading-relaxed">{selectedCompany.products || selectedCompany.moq || "-"}</p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Export Status</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.exportStatus || "-"}</p>
-                   </div>
-                   <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-                      <p className="font-bold text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-2">Target Buyer</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-semibold">{selectedCompany.targetBuyer || "-"}</p>
-                   </div>
-                </div>
-
-                {(() => {
-                  const images = [selectedCompany.productImage1, selectedCompany.productImage2, selectedCompany.productImage3, selectedCompany.productImage4, selectedCompany.productImage5].filter(Boolean);
-                  if (images.length === 0) return null;
-                  return (
-                    <div>
-                      <h4 className="font-extrabold text-gray-900 text-lg sm:text-xl mb-3 flex items-center"><span className="text-[#FDB827] mr-2">|</span> Product Gallery</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                         {images.map((img, idx) => (
-                            <a href={img} target="_blank" rel="noreferrer" key={idx} className="aspect-square bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative block group cursor-pointer">
-                               <DriveImage 
-                                  url={img} 
-                                  alt={`Product ${idx+1}`} 
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                                  fallbackText="Click to View Image"
-                               />
-                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                  <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                               </div>
-                            </a>
-                         ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {selectedCompany.productImagesLink && (
-                   <a href={selectedCompany.productImagesLink} target="_blank" rel="noreferrer" 
-                      className="block bg-blue-50/50 hover:bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-2xl text-center transition-all group shadow-sm mt-4">
-                      <p className="text-blue-700 font-extrabold text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2">
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6 transform group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        <span className="text-center">Download / View Product Catalog</span>
-                      </p>
-                   </a>
-                )}
-                
-                <div className="bg-gray-100 text-gray-600 p-3 sm:p-4 rounded-xl text-xs sm:text-sm text-center font-semibold flex flex-col sm:flex-row items-center justify-center gap-2">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                  Direct contact info is hidden for platform security.
-                </div>
-
-                <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
-                    <div className="text-center sm:text-left">
-                      <h4 className="font-extrabold text-lg sm:text-xl text-gray-900">Interested in this brand?</h4>
-                      <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">Initiate contact through our platform.</p>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                      {!currentMeeting ? (
-                         <Button onClick={() => handleRequestMeeting(selectedCompany.id)} className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base shadow-xl shadow-amber-200/50">Request a Meeting</Button>
-                      ) : (
-                         <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                            Status: <Badge status={currentMeeting.status} className="ml-2 sm:ml-3" />
-                         </div>
-                      )}
-                    </div>
-                </div>
+          <Modal isOpen={!!viewingBuyer} onClose={() => setViewingBuyer(null)} title="👤 바이어 상세 정보 조회">
+            {viewingBuyer && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 mb-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <DetailRow label="로그인 ID" value={viewingBuyer.loginId} />
+                <DetailRow label="비밀번호" value={viewingBuyer.password} />
+                <DetailRow label="회사명 (companyName)" value={viewingBuyer.companyName} />
+                <DetailRow label="담당자 이름" value={`${viewingBuyer.firstName || ''} ${viewingBuyer.lastName || ''}`} />
+                <DetailRow label="직책 (position)" value={viewingBuyer.position} />
+                <DetailRow label="국가 (country)" value={viewingBuyer.country} />
+                <DetailRow label="모바일 번호" value={viewingBuyer.mobile} />
+                <DetailRow label="개인 이메일" value={viewingBuyer.email} />
+                <DetailRow label="공식 이메일" value={viewingBuyer.officialEmail} />
+                <DetailRow label="비즈니스 유형" value={viewingBuyer.businessType} />
+                <DetailRow label="관심 카테고리" value={viewingBuyer.targetCategories} />
+                <DetailRow label="미팅 가능 시간" value={viewingBuyer.timeSlots} />
+                <DetailRow label="웹사이트" value={viewingBuyer.website} />
+                <DetailRow label="상세 주소" value={viewingBuyer.address} />
+                <DetailRow label="회사 소개" value={viewingBuyer.companyIntro} />
+                <DetailRow label="한국 기업 거래 이력" value={viewingBuyer.history} />
+                <DetailRow label="직원 수" value={viewingBuyer.employees} />
+                <DetailRow label="설립 연도" value={viewingBuyer.establishedYear} />
+                <DetailRow label="연 매출" value={viewingBuyer.annualRevenue} />
+                <DetailRow label="로고 URL" value={viewingBuyer.logoUrl} />
               </div>
             )}
+            <div className="flex justify-end mt-2">
+              <Button onClick={() => setViewingBuyer(null)} variant="secondary">닫기</Button>
+            </div>
           </Modal>
 
         </div>
