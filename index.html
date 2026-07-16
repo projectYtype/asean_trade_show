@@ -7,6 +7,22 @@
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Config for Pretendard Font (폰트 강제 적용) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Pretendard Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
   
   <!-- React & ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -18,9 +34,11 @@
   <style>
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       background-color: #f9fafb;
+      letter-spacing: -0.015em; /* 글꼴 간격을 살짝 좁혀서 더 트렌디하고 정돈되게 변경 */
     }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 4px; }
@@ -127,22 +145,24 @@
           products: '• Taxifolin Plus Shampoo ($12 / MOQ 500개)\n• Orethistle Platinum ($12 / MOQ 500개)',
           exportStatus: '미국, 싱가포르, 홍콩, 베트남',
           targetBuyer: '미국 / 온·오프라인 몰 운영 바이어 및 벤더사',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Dummy
-          productImagesLink: '', // Catalog
-          productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: '' // 5 images
+          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          productImagesLink: '',
+          productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: ''
         }
       ],
       buyers: [
         {
           id: 'buyer_1', loginId: 'BUYER01', password: 'pass123', 
           firstName: 'John', lastName: 'Smith', position: 'Sourcing Director', 
-          mobile: '+65 9876 5432', email: 'john@globalsourcing.sg',
+          mobile: '+65 9876 5432', email: 'john@globalsourcing.sg', officialEmail: 'john@globalsourcing.sg',
           companyName: 'Global Sourcing PTE LTD', country: 'Singapore', website: 'https://globalsourcing.sg', 
           address: 'Marina Bay Financial Centre, Singapore', logoUrl: '',
           timeSlots: '10:00~10:30, 13:00~13:30, 14:00~14:30',
-          businessType: 'Distributor / Retailer',
+          businessType: 'Distributor',
           targetCategories: 'Beauty, Skincare, Health Supplements',
-          history: 'Cooperated with several beauty brand manufacturers in 2024. Looking for green-bio tech partners this year.',
+          companyIntro: 'We are a leading distributor in Singapore.',
+          employees: '120', establishedYear: '2005', annualRevenue: '$10M - $20M',
+          history: 'Cooperated with several beauty brand manufacturers in 2024.',
         }
       ],
       meetings: []
@@ -163,17 +183,15 @@
             if(!url) return null;
             if(url.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i)) return url;
             if(url.match(/\.(ai|eps|psd|pdf)(\?.*)?$/i)) return `https://placehold.co/400x400/FDB827/ffffff?text=${url.split('.').pop().split('?')[0].toUpperCase()}+File`;
-            if (driveId) return `https://lh3.googleusercontent.com/d/${driveId}=w800-h800-rw`; // 1차 시도: PNG/JPG 고화질 렌더링
+            if (driveId) return `https://lh3.googleusercontent.com/d/${driveId}=w800-h800-rw`;
             return url;
         }, [url, driveId]);
 
         const handleError = (e) => {
             if (driveId && !e.target.dataset.fallback) {
-                // 1차 렌더링 실패 (.ai 등) 시, 2차 썸네일 엔진으로 자동 전환
                 e.target.dataset.fallback = 'true';
                 e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
             } else {
-                // 권한 오류 등으로 2차 렌더링도 실패 시 안전하게 대체 이미지 표시
                 e.target.onerror = null;
                 e.target.src = `https://placehold.co/400x400/f1f5f9/94a3b8?text=${fallbackText.replace(/ /g, '+')}`;
             }
@@ -529,7 +547,7 @@
             </form>
           </Modal>
 
-          {/* Buyer Add Modal */}
+          {}
           <Modal isOpen={isAddBuyerModalOpen} onClose={() => setIsAddBuyerModalOpen(false)} title="Add New Buyer Profile">
             <form onSubmit={handleAddBuyer} className="space-y-6 sm:space-y-8">
                 <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
@@ -558,7 +576,6 @@
                     <Input label="Company Name" value={newBuyer.companyName || ''} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
                     <Input label="Country" value={newBuyer.country || ''} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
                     
-                    {/* 👇 공식 이메일 추가된 부분 */}
                     <Input label="Official Email" type="email" value={newBuyer.officialEmail || ''} onChange={e => setNewBuyer({...newBuyer, officialEmail: e.target.value})} placeholder="e.g. contact@company.com" />
                     <Input label="Company Website" value={newBuyer.website || ''} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
                     
@@ -576,7 +593,6 @@
                   <div className="grid grid-cols-1 gap-4">
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* 👇 비즈니스 타입 (드롭다운) */}
                       <div className="mb-5">
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Business Type</label>
                         <select value={newBuyer.businessType || ''} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FDB827] focus:border-transparent transition-colors">
@@ -588,27 +604,22 @@
                           <option value="Other">Other</option>
                         </select>
                       </div>
-                      
-                      {/* 👇 타겟 카테고리 */}
                       <Input label="Target Categories" value={newBuyer.targetCategories || ''} onChange={e => setNewBuyer({...newBuyer, targetCategories: e.target.value})} placeholder="e.g. Cosmetics, Skincare, Health Supplements" />
                     </div>
 
-                    {/* 👇 회사 소개 */}
                     <Input isTextArea label="Company Introduction" value={newBuyer.companyIntro || ''} onChange={e => setNewBuyer({...newBuyer, companyIntro: e.target.value})} placeholder="Brief introduction of your company" />
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* 👇 직원수, 설립연도, 매출액 */}
                       <Input label="Number of Employees" type="number" value={newBuyer.employees || ''} onChange={e => setNewBuyer({...newBuyer, employees: e.target.value})} placeholder="e.g. 50" />
                       <Input label="Year Established" type="number" value={newBuyer.establishedYear || ''} onChange={e => setNewBuyer({...newBuyer, establishedYear: e.target.value})} placeholder="e.g. 2010" />
                       <Input label="Annual Revenue" value={newBuyer.annualRevenue || ''} onChange={e => setNewBuyer({...newBuyer, annualRevenue: e.target.value})} placeholder="e.g. $1M - $5M" />
                     </div>
 
-                    {/* 👇 한국과의 거래이력 */}
                     <Input isTextArea label="Trading History with Korea" value={newBuyer.history || ''} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} placeholder="Describe any previous or current business with Korean companies" />
                   </div>
                 </div>
 
-                <div className="pt-6 border-t flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white pb-2">
+                <div className="pt-6 border-t flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white pb-2 z-10">
                   <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setIsAddBuyerModalOpen(false)}>Cancel</Button>
                   <Button type="submit" className="w-full sm:w-auto">Save Buyer</Button>
                 </div>
@@ -664,22 +675,21 @@
                 {buyers.map(b => {
                   const myMtg = meetings.find(m => m.companyId === sessionData.id && m.buyerId === b.id);
                   return (
-                    <Card key={b.id} hover className="flex flex-col overflow-visible">
+                    <Card key={b.id} hover onClick={() => setSelectedBuyerId(b.id)} className="flex flex-col overflow-visible group">
                       <div className="p-5 sm:p-6 flex-grow">
                         <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{b.companyName}</h3>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
                           {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status}>{myMtg.status === 'pending' ? '대기중' : myMtg.status === 'accepted' ? '수락됨' : '거절됨'}</Badge></div>}
                         </div>
                         <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미상'}</p>
                         <div className="text-sm text-gray-600 space-y-1">
-                          <p><span className="font-semibold text-gray-900">담당자:</span> {b.firstName} {b.lastName}</p>
+                          <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
                           <p><span className="font-semibold text-gray-900">국가:</span> {b.country || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex flex-col gap-2">
-                        <button onClick={() => setSelectedBuyerId(b.id)} className="text-sm text-blue-600 hover:text-blue-800 font-bold w-full text-left px-2 py-1">상세 정보 보기 &rarr;</button>
                         {!myMtg ? (
-                          <Button onClick={() => handleRequestMeetingWithBuyer(b.id)} className="w-full">미팅 신청하기</Button>
+                          <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(b.id); }} className="w-full relative z-10">미팅 신청하기</Button>
                         ) : (
                           <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
                             {myMtg.requestedBy === 'company' ? '내가 신청한 미팅입니다.' : '바이어가 신청한 미팅입니다.'}
@@ -735,57 +745,83 @@
 
           <Modal isOpen={!!selectedBuyerId} onClose={() => setSelectedBuyerId(null)} title="바이어 상세 프로필">
             {viewBuyer && (
-                <div className="space-y-4 sm:space-y-6 pb-4">
-                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-                     <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
+                <div className="space-y-6 sm:space-y-8 pb-6">
+                  {/* Hero Section */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                     <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-blue-50/50 rounded-bl-full -z-10"></div>
+                     <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center p-4 flex-shrink-0 z-10">
                         {viewBuyer.logoUrl ? (
                            <a href={viewBuyer.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
-                              <DriveImage url={viewBuyer.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
+                              <DriveImage url={viewBuyer.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="로고 없음" />
                            </a>
-                        ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                        ) : <span className="text-gray-300 text-xs uppercase font-bold tracking-widest text-center">로고 없음</span>}
                      </div>
-                     <div className="text-center sm:text-left z-10 flex-grow w-full">
-                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-md mb-2 sm:mb-3">{viewBuyer.country || "Global"}</span>
-                        <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{viewBuyer.companyName}</h2>
-                        <p className="text-sm sm:text-lg text-gray-500 font-medium">{viewBuyer.firstName} {viewBuyer.lastName} / {viewBuyer.position}</p>
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Type</p>
-                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.businessType || "-"}</p>
-                     </div>
-                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Employees</p>
-                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.employees ? `${viewBuyer.employees} 명` : "-"}</p>
-                     </div>
-                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Established</p>
-                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.establishedYear || "-"}</p>
-                     </div>
-                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Revenue</p>
-                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.annualRevenue || "-"}</p>
-                     </div>
-                     <div className="col-span-2 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
-                        <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{viewBuyer.website || "-"}</a>
-                     </div>
-                     <div className="col-span-2 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Available Time Slots</p>
-                        <p className="font-bold text-gray-900 text-sm whitespace-pre-wrap">{viewBuyer.timeSlots || "미지정"}</p>
+                     <div className="text-center sm:text-left z-10 flex-grow w-full pt-2">
+                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-extrabold uppercase tracking-widest rounded-lg mb-3">{viewBuyer.country || "Global"}</span>
+                        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2 tracking-tight">{viewBuyer.companyName}</h2>
+                        <p className="text-base sm:text-lg text-gray-500 font-medium">{viewBuyer.firstName} {viewBuyer.lastName} <span className="mx-2 text-gray-300">|</span> <span className="text-blue-600">{viewBuyer.position}</span></p>
                      </div>
                   </div>
 
-                  <div>
-                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> Company Introduction</h4>
-                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">{viewBuyer.companyIntro || "No data provided."}</div>
+                  {/* Fact Sheet */}
+                  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                     <h4 className="font-black text-gray-900 text-lg mb-6 flex items-center border-b border-gray-100 pb-4">
+                        <span className="text-blue-500 mr-2 text-xl">📌</span> 핵심 정보 (At a Glance)
+                     </h4>
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
+                        <div>
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">비즈니스 유형</p>
+                           <p className="font-bold text-gray-900 text-base">{viewBuyer.businessType || "-"}</p>
+                        </div>
+                        <div>
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">직원 수</p>
+                           <p className="font-bold text-gray-900 text-base">{viewBuyer.employees ? `${viewBuyer.employees} 명` : "-"}</p>
+                        </div>
+                        <div>
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">설립 연도</p>
+                           <p className="font-bold text-gray-900 text-base">{viewBuyer.establishedYear ? `${viewBuyer.establishedYear}년` : "-"}</p>
+                        </div>
+                        <div>
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">연 매출</p>
+                           <p className="font-bold text-gray-900 text-base">{viewBuyer.annualRevenue || "-"}</p>
+                        </div>
+                        
+                        <div className="col-span-2">
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">공식 이메일</p>
+                           <a href={`mailto:${viewBuyer.officialEmail}`} className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.officialEmail || "미입력"}</a>
+                        </div>
+                        <div className="col-span-2">
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">웹사이트</p>
+                           <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.website || "-"}</a>
+                        </div>
+                        
+                        <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                           <p className="font-bold text-[11px] text-gray-500 uppercase tracking-widest mb-2 flex items-center"><span className="mr-2">📍</span>회사 주소</p>
+                           <p className="font-semibold text-gray-800 text-sm whitespace-pre-wrap">{viewBuyer.address || "미입력"}</p>
+                        </div>
+                        <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                           <p className="font-bold text-[11px] text-gray-500 uppercase tracking-widest mb-2 flex items-center"><span className="mr-2">🕒</span>미팅 가능 시간</p>
+                           <p className="font-semibold text-gray-800 text-sm whitespace-pre-wrap">{viewBuyer.timeSlots || "미지정"}</p>
+                        </div>
+                     </div>
                   </div>
 
-                  <div>
-                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> History with Korean Products</h4>
-                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">{viewBuyer.history || "No data provided."}</div>
+                  {/* Long Text Sections */}
+                  <div className="space-y-6">
+                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🏢</span> 회사 소개</h4>
+                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose">{viewBuyer.companyIntro || "입력된 정보가 없습니다."}</div>
+                     </div>
+
+                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🎯</span> 관심 (타겟) 카테고리</h4>
+                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50">{viewBuyer.targetCategories || "입력된 정보가 없습니다."}</div>
+                     </div>
+
+                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🤝</span> 한국 기업과의 거래 이력</h4>
+                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose">{viewBuyer.history || "입력된 정보가 없습니다."}</div>
+                     </div>
                   </div>
 
                   <div className="bg-gray-100 text-gray-600 p-4 rounded-xl text-xs sm:text-sm text-center font-semibold mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-2">
@@ -1192,7 +1228,7 @@
               <div className="flex items-center space-x-2 sm:space-x-6">
                  {sessionRole === 'guest' && (
                    <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-bold bg-[#FDB827] text-gray-900 rounded-lg hover:bg-amber-400 hover:shadow-md transition-all">
-                     SIGN UP NOW
+                      SIGN UP NOW
                    </a>
                  )}
                  <span className="hidden sm:inline-block text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 uppercase tracking-widest border border-gray-200">
