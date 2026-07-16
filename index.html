@@ -326,55 +326,86 @@
       const { companies = [], buyers = [], meetings = [] } = data || {};
       const [activeTab, setActiveTab] = useState('companies');
 
-      const deleteCompany = (id) => showConfirm("Delete this company?", () => setData(prev => ({ ...prev, companies: prev.companies.filter(c => c.id !== id) })));
-      const deleteBuyer = (id) => showConfirm("Delete this buyer?", () => setData(prev => ({ ...prev, buyers: prev.buyers.filter(b => b.id !== id) })));
-      const deleteMeeting = (id) => showConfirm("Delete this meeting?", () => setData(prev => ({ ...prev, meetings: prev.meetings.filter(m => m.id !== id) })));
+      // 기업 전체 스키마 적용
+      const initialComp = { loginId: '', password: '', nameEn: '', brandEn: '', country: '', website: '', logoUrl: '', contactName: '', contactPhone: '', contactEmail: '', businessArea: '', introEn: '', competitiveness: '', products: '', exportStatus: '', targetBuyer: '', productImagesLink: '', productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: '', youtubeUrl: '' };
+      const [isAddCompModal, setIsAddCompModal] = useState(false);
+      const [newComp, setNewComp] = useState(initialComp);
+
+      // 바이어 전체 스키마 적용
+      const initialBuyer = { loginId: '', password: '', firstName: '', lastName: '', position: '', mobile: '', email: '', timeSlots: '', companyName: '', country: '', website: '', address: '', businessType: '', targetCategories: '', history: '', logoUrl: '', officialEmail: '', companyIntro: '', employees: '', establishedYear: '', annualRevenue: '' };
+      const [isAddBuyerModal, setIsAddBuyerModal] = useState(false);
+      const [newBuyer, setNewBuyer] = useState(initialBuyer);
+
+      // 계정 추가 핸들러
+      const handleAddComp = (e) => {
+        e.preventDefault();
+        if(!newComp.loginId || !newComp.password || !newComp.brandEn) return showAlert("필수 항목을 입력해주세요.");
+        setData(prev => ({ ...prev, companies: [{...newComp, id: 'comp_'+Date.now()}, ...prev.companies] }));
+        setIsAddCompModal(false); 
+        setNewComp(initialComp); 
+        showAlert("새 기업이 추가되었습니다.");
+      };
+
+      const handleAddBuyer = (e) => {
+        e.preventDefault();
+        if(!newBuyer.loginId || !newBuyer.password || !newBuyer.companyName) return showAlert("필수 항목을 입력해주세요.");
+        setData(prev => ({ ...prev, buyers: [{...newBuyer, id: 'buyer_'+Date.now()}, ...prev.buyers] }));
+        setIsAddBuyerModal(false); 
+        setNewBuyer(initialBuyer); 
+        showAlert("새 바이어가 추가되었습니다.");
+      };
+
+      const deleteCompany = (id) => showConfirm("정말 이 기업을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, companies: prev.companies.filter(c => c.id !== id) })));
+      const deleteBuyer = (id) => showConfirm("정말 이 바이어를 삭제하시겠습니까?", () => setData(prev => ({ ...prev, buyers: prev.buyers.filter(b => b.id !== id) })));
+      const deleteMeeting = (id) => showConfirm("정말 이 미팅을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, meetings: prev.meetings.filter(m => m.id !== id) })));
 
       const tabs = [
-        { id: 'companies', label: 'Companies', icon: '🏢' },
-        { id: 'buyers', label: 'Buyers', icon: '👤' },
-        { id: 'meetings', label: 'Meetings', icon: '🗓️' }
+        { id: 'companies', label: '기업', icon: '🏢' },
+        { id: 'buyers', label: '바이어', icon: '👤' },
+        { id: 'meetings', label: '미팅', icon: '🗓️' }
       ];
 
       return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in">
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Platform Administration</h1>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage users, profiles, and expo interactions.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">관리자 대시보드</h1>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">사용자 계정, 프로필 및 미팅 요청을 통합 관리합니다.</p>
           </div>
 
           <div className="flex space-x-2 mb-6 border-b border-gray-200 pb-px overflow-x-auto hide-scrollbar">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
                 className={`flex items-center px-4 sm:px-5 py-3 text-sm font-bold rounded-t-xl transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 border border-gray-200 border-b-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] relative z-10 translate-y-px' : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-                <span className="mr-2 text-lg">{tab.icon}</span> Manage {tab.label}
+                <span className="mr-2 text-lg">{tab.icon}</span> {tab.label} 관리
               </button>
             ))}
           </div>
 
+          {}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
              {activeTab === 'companies' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                  <h2 className="text-lg font-bold text-gray-900">Registered Companies ({companies.length})</h2>
+                  <h2 className="text-lg font-bold text-gray-900">등록된 기업 ({companies.length})</h2>
+                  <Button onClick={() => setIsAddCompModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 기업 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50/50">
                       <tr>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Login ID</th>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Brand Name</th>
-                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">로그인 ID</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">브랜드명</th>
+                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">액션</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {companies.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">No companies registered.</td></tr>}
+                      {companies.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">등록된 기업이 없습니다.</td></tr>}
                       {companies.map(c => (
                         <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.loginId}</td>
-                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{c.brandEn}</td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{c.brandEn || c.nameEn}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <button onClick={() => deleteCompany(c.id)} className="text-red-500 font-bold hover:underline">Delete</button>
+                            <button onClick={() => deleteCompany(c.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
                       ))}
@@ -386,25 +417,26 @@
              {activeTab === 'buyers' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                  <h2 className="text-lg font-bold text-gray-900">Registered Buyers ({buyers.length})</h2>
+                  <h2 className="text-lg font-bold text-gray-900">등록된 바이어 ({buyers.length})</h2>
+                  <Button onClick={() => setIsAddBuyerModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 바이어 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50/50">
                       <tr>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Login ID</th>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Company / Name</th>
-                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">로그인 ID</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">회사명 / 담당자</th>
+                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">액션</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {buyers.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">No buyers registered.</td></tr>}
+                      {buyers.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">등록된 바이어가 없습니다.</td></tr>}
                       {buyers.map(b => (
                         <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{b.loginId}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{b.companyName} ({b.firstName} {b.lastName})</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <button onClick={() => deleteBuyer(b.id)} className="text-red-500 font-bold hover:underline">Delete</button>
+                            <button onClick={() => deleteBuyer(b.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
                       ))}
@@ -416,25 +448,25 @@
              {activeTab === 'meetings' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                  <h2 className="text-lg font-bold text-gray-900">All Meetings ({meetings.length})</h2>
+                  <h2 className="text-lg font-bold text-gray-900">전체 미팅 내역 ({meetings.length})</h2>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50/50">
                       <tr>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Requested By</th>
-                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">신청 주체</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">상태</th>
+                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">액션</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {meetings.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">No meetings requested.</td></tr>}
+                      {meetings.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-gray-400 font-medium">미팅 내역이 없습니다.</td></tr>}
                       {meetings.map(m => (
                         <tr key={m.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">{m.requestedBy}</td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">{m.requestedBy === 'buyer' ? '바이어' : '기업'}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><Badge status={m.status} /></td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <button onClick={() => deleteMeeting(m.id)} className="text-red-500 font-bold hover:underline">Delete</button>
+                            <button onClick={() => deleteMeeting(m.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
                       ))}
@@ -444,6 +476,138 @@
               </div>
              )}
           </div>
+
+          {}
+          <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title="새 기업 계정 추가 (전체 정보)">
+            <form onSubmit={handleAddComp} className="space-y-6">
+              
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">🔐 로그인 계정 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="로그인 ID (loginId, 필수)" value={newComp.loginId} onChange={e => setNewComp({...newComp, loginId: e.target.value})} required />
+                  <Input label="비밀번호 (password, 필수)" value={newComp.password} onChange={e => setNewComp({...newComp, password: e.target.value})} required />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">🏢 기업 기본 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input label="법인명 (nameEn)" value={newComp.nameEn} onChange={e => setNewComp({...newComp, nameEn: e.target.value})} />
+                  <Input label="브랜드명 (brandEn, 필수)" value={newComp.brandEn} onChange={e => setNewComp({...newComp, brandEn: e.target.value})} required />
+                  <Input label="국가 (country)" value={newComp.country} onChange={e => setNewComp({...newComp, country: e.target.value})} />
+                  
+                  <Input label="비즈니스 분야 (businessArea)" value={newComp.businessArea} onChange={e => setNewComp({...newComp, businessArea: e.target.value})} />
+                  <Input label="웹사이트 (website)" value={newComp.website} onChange={e => setNewComp({...newComp, website: e.target.value})} />
+                  <Input label="로고 URL (logoUrl)" value={newComp.logoUrl} onChange={e => setNewComp({...newComp, logoUrl: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">👤 담당자 연락처</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input label="담당자명 (contactName)" value={newComp.contactName} onChange={e => setNewComp({...newComp, contactName: e.target.value})} />
+                  <Input label="전화번호 (contactPhone)" value={newComp.contactPhone} onChange={e => setNewComp({...newComp, contactPhone: e.target.value})} />
+                  <Input label="이메일 (contactEmail)" value={newComp.contactEmail} onChange={e => setNewComp({...newComp, contactEmail: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">📝 기업 소개 및 제품 정보</h4>
+                <div className="space-y-4">
+                  <Input label="회사 소개 (introEn)" value={newComp.introEn} onChange={e => setNewComp({...newComp, introEn: e.target.value})} isTextArea={true} />
+                  <Input label="경쟁력 및 특징 (competitiveness)" value={newComp.competitiveness} onChange={e => setNewComp({...newComp, competitiveness: e.target.value})} isTextArea={true} />
+                  <Input label="제품 / MOQ (products)" value={newComp.products} onChange={e => setNewComp({...newComp, products: e.target.value})} isTextArea={true} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <Input label="수출 현황 (exportStatus)" value={newComp.exportStatus} onChange={e => setNewComp({...newComp, exportStatus: e.target.value})} />
+                  <Input label="타겟 바이어 (targetBuyer)" value={newComp.targetBuyer} onChange={e => setNewComp({...newComp, targetBuyer: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">🖼️ 홍보 및 미디어 URL</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="유튜브 URL (youtubeUrl)" value={newComp.youtubeUrl} onChange={e => setNewComp({...newComp, youtubeUrl: e.target.value})} />
+                  <Input label="카탈로그 다운로드 링크 (productImagesLink)" value={newComp.productImagesLink} onChange={e => setNewComp({...newComp, productImagesLink: e.target.value})} />
+                  <Input label="제품 이미지 1 (productImage1)" value={newComp.productImage1} onChange={e => setNewComp({...newComp, productImage1: e.target.value})} />
+                  <Input label="제품 이미지 2 (productImage2)" value={newComp.productImage2} onChange={e => setNewComp({...newComp, productImage2: e.target.value})} />
+                  <Input label="제품 이미지 3 (productImage3)" value={newComp.productImage3} onChange={e => setNewComp({...newComp, productImage3: e.target.value})} />
+                  <Input label="제품 이미지 4 (productImage4)" value={newComp.productImage4} onChange={e => setNewComp({...newComp, productImage4: e.target.value})} />
+                  <Input label="제품 이미지 5 (productImage5)" value={newComp.productImage5} onChange={e => setNewComp({...newComp, productImage5: e.target.value})} />
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가된 정보는 임시 저장되며, 구글 시트 연동시 자동 동기화됩니다.</p>
+              
+              <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
+                <Button variant="ghost" type="button" onClick={() => setIsAddCompModal(false)}>취소 (Cancel)</Button>
+                <Button type="submit" className="px-8 shadow-md">기업 추가하기</Button>
+              </div>
+            </form>
+          </Modal>
+
+          {}
+          <Modal isOpen={isAddBuyerModal} onClose={() => setIsAddBuyerModal(false)} title="새 바이어 계정 추가 (전체 정보)">
+            <form onSubmit={handleAddBuyer} className="space-y-6">
+              
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">🔐 로그인 계정 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="로그인 ID (loginId, 필수)" value={newBuyer.loginId} onChange={e => setNewBuyer({...newBuyer, loginId: e.target.value})} required />
+                  <Input label="비밀번호 (password, 필수)" value={newBuyer.password} onChange={e => setNewBuyer({...newBuyer, password: e.target.value})} required />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">👤 바이어 개인 / 담당자 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input label="이름 (firstName)" value={newBuyer.firstName} onChange={e => setNewBuyer({...newBuyer, firstName: e.target.value})} />
+                  <Input label="성 (lastName)" value={newBuyer.lastName} onChange={e => setNewBuyer({...newBuyer, lastName: e.target.value})} />
+                  <Input label="직책 (position)" value={newBuyer.position} onChange={e => setNewBuyer({...newBuyer, position: e.target.value})} />
+                  <Input label="모바일 번호 (mobile)" value={newBuyer.mobile} onChange={e => setNewBuyer({...newBuyer, mobile: e.target.value})} />
+                  <Input label="개인 이메일 (email)" value={newBuyer.email} onChange={e => setNewBuyer({...newBuyer, email: e.target.value})} />
+                  <Input label="미팅 가능 시간 (timeSlots)" value={newBuyer.timeSlots} onChange={e => setNewBuyer({...newBuyer, timeSlots: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">🏢 회사 기본 정보</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input label="회사명 (companyName, 필수)" value={newBuyer.companyName} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
+                  <Input label="국가 (country)" value={newBuyer.country} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
+                  <Input label="웹사이트 (website)" value={newBuyer.website} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
+                  
+                  <Input label="직원 수 (employees)" value={newBuyer.employees} onChange={e => setNewBuyer({...newBuyer, employees: e.target.value})} />
+                  <Input label="설립 연도 (establishedYear)" value={newBuyer.establishedYear} onChange={e => setNewBuyer({...newBuyer, establishedYear: e.target.value})} />
+                  <Input label="연 매출 (annualRevenue)" value={newBuyer.annualRevenue} onChange={e => setNewBuyer({...newBuyer, annualRevenue: e.target.value})} />
+                  
+                  <div className="col-span-1 md:col-span-2">
+                    <Input label="회사 상세 주소 (address)" value={newBuyer.address} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
+                  </div>
+                  <Input label="대표 이메일 (officialEmail)" value={newBuyer.officialEmail} onChange={e => setNewBuyer({...newBuyer, officialEmail: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-4 flex items-center">📊 비즈니스 및 관심 분야</h4>
+                <div className="space-y-4">
+                  <Input label="비즈니스 유형 (businessType) ex) 유통, 제조..." value={newBuyer.businessType} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} />
+                  <Input label="관심 카테고리 (targetCategories)" value={newBuyer.targetCategories} onChange={e => setNewBuyer({...newBuyer, targetCategories: e.target.value})} isTextArea={true} />
+                  <Input label="한국 기업 거래 이력 (history)" value={newBuyer.history} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} isTextArea={true} />
+                  <Input label="회사 소개 (companyIntro)" value={newBuyer.companyIntro} onChange={e => setNewBuyer({...newBuyer, companyIntro: e.target.value})} isTextArea={true} />
+                  <Input label="회사 로고 URL (logoUrl)" value={newBuyer.logoUrl} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가된 정보는 임시 저장되며, 구글 시트 연동시 자동 동기화됩니다.</p>
+              
+              <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
+                <Button variant="ghost" type="button" onClick={() => setIsAddBuyerModal(false)}>취소 (Cancel)</Button>
+                <Button type="submit" className="px-8 shadow-md">바이어 추가하기</Button>
+              </div>
+            </form>
+          </Modal>
+
         </div>
       );
     };
