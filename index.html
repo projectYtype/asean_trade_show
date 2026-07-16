@@ -557,8 +557,14 @@
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input label="Company Name" value={newBuyer.companyName || ''} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
                     <Input label="Country" value={newBuyer.country || ''} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
+                    
+                    {/* 👇 공식 이메일 추가된 부분 */}
+                    <Input label="Official Email" type="email" value={newBuyer.officialEmail || ''} onChange={e => setNewBuyer({...newBuyer, officialEmail: e.target.value})} placeholder="e.g. contact@company.com" />
                     <Input label="Company Website" value={newBuyer.website || ''} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
-                    <Input label="Company Address" value={newBuyer.address || ''} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
+                    
+                    <div className="col-span-1 md:col-span-2">
+                      <Input label="Company Address" value={newBuyer.address || ''} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
+                    </div>
                     <div className="col-span-1 md:col-span-2">
                       <Input label="Company Logo (Google Drive or .png/.jpg/.ai Link)" placeholder="https://drive.google.com/... or https://.../logo.ai" value={newBuyer.logoUrl || ''} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
                     </div>
@@ -566,11 +572,39 @@
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg">3. Business Interests</h4>
+                  <h4 className="font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4 text-base sm:text-lg mt-6">3. Business Interests</h4>
                   <div className="grid grid-cols-1 gap-4">
-                    <Input label="Business Type" value={newBuyer.businessType || ''} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} placeholder="e.g. Distributor, Retailer" />
-                    <Input label="Target Categories" value={newBuyer.targetCategories || ''} onChange={e => setNewBuyer({...newBuyer, targetCategories: e.target.value})} placeholder="e.g. Skincare, Green Bio..." />
-                    <Input isTextArea label="History with Korean products" value={newBuyer.history || ''} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 👇 비즈니스 타입 (드롭다운) */}
+                      <div className="mb-5">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Business Type</label>
+                        <select value={newBuyer.businessType || ''} onChange={e => setNewBuyer({...newBuyer, businessType: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FDB827] focus:border-transparent transition-colors">
+                          <option value="">Select Business Type</option>
+                          <option value="Distributor">Distributor</option>
+                          <option value="Wholesaler">Wholesaler</option>
+                          <option value="Retailer">Retailer</option>
+                          <option value="Manufacturer">Manufacturer</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      
+                      {/* 👇 타겟 카테고리 */}
+                      <Input label="Target Categories" value={newBuyer.targetCategories || ''} onChange={e => setNewBuyer({...newBuyer, targetCategories: e.target.value})} placeholder="e.g. Cosmetics, Skincare, Health Supplements" />
+                    </div>
+
+                    {/* 👇 회사 소개 */}
+                    <Input isTextArea label="Company Introduction" value={newBuyer.companyIntro || ''} onChange={e => setNewBuyer({...newBuyer, companyIntro: e.target.value})} placeholder="Brief introduction of your company" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 👇 직원수, 설립연도, 매출액 */}
+                      <Input label="Number of Employees" type="number" value={newBuyer.employees || ''} onChange={e => setNewBuyer({...newBuyer, employees: e.target.value})} placeholder="e.g. 50" />
+                      <Input label="Year Established" type="number" value={newBuyer.establishedYear || ''} onChange={e => setNewBuyer({...newBuyer, establishedYear: e.target.value})} placeholder="e.g. 2010" />
+                      <Input label="Annual Revenue" value={newBuyer.annualRevenue || ''} onChange={e => setNewBuyer({...newBuyer, annualRevenue: e.target.value})} placeholder="e.g. $1M - $5M" />
+                    </div>
+
+                    {/* 👇 한국과의 거래이력 */}
+                    <Input isTextArea label="Trading History with Korea" value={newBuyer.history || ''} onChange={e => setNewBuyer({...newBuyer, history: e.target.value})} placeholder="Describe any previous or current business with Korean companies" />
                   </div>
                 </div>
 
@@ -717,24 +751,36 @@
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Business Type</p>
                         <p className="font-bold text-gray-900 text-sm">{viewBuyer.businessType || "-"}</p>
                      </div>
                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Employees</p>
+                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.employees ? `${viewBuyer.employees} 명` : "-"}</p>
+                     </div>
+                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Established</p>
+                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.establishedYear || "-"}</p>
+                     </div>
+                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Revenue</p>
+                        <p className="font-bold text-gray-900 text-sm">{viewBuyer.annualRevenue || "-"}</p>
+                     </div>
+                     <div className="col-span-2 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
                         <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{viewBuyer.website || "-"}</a>
                      </div>
-                     <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                     <div className="col-span-2 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Available Time Slots</p>
                         <p className="font-bold text-gray-900 text-sm whitespace-pre-wrap">{viewBuyer.timeSlots || "미지정"}</p>
                      </div>
                   </div>
 
                   <div>
-                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> Target Categories</h4>
-                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap">{viewBuyer.targetCategories || "-"}</div>
+                     <h4 className="font-extrabold text-gray-900 text-lg mb-3 flex items-center"><span className="text-blue-500 mr-2">|</span> Company Introduction</h4>
+                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">{viewBuyer.companyIntro || "No data provided."}</div>
                   </div>
 
                   <div>
