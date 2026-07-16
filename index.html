@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ASEAN Market Expo Portal</title>
+  <title>(승)ASEAN Market Expo Portal</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -347,23 +347,39 @@
       const [isAddBuyerModal, setIsAddBuyerModal] = useState(false);
       const [newBuyer, setNewBuyer] = useState(initialBuyer);
 
-      // 계정 추가 핸들러
+      // 계정 추가 및 수정 핸들러 (통합)
       const handleAddComp = (e) => {
         e.preventDefault();
         if(!newComp.loginId || !newComp.password || !newComp.brandEn) return showAlert("필수 항목을 입력해주세요.");
-        setData(prev => ({ ...prev, companies: [{...newComp, id: 'comp_'+Date.now()}, ...prev.companies] }));
+        
+        if (newComp.id) {
+          // 수정 모드
+          setData(prev => ({ ...prev, companies: prev.companies.map(c => c.id === newComp.id ? newComp : c) }));
+          showAlert("기업 정보가 성공적으로 수정되었습니다.");
+        } else {
+          // 추가 모드
+          setData(prev => ({ ...prev, companies: [{...newComp, id: 'comp_'+Date.now()}, ...prev.companies] }));
+          showAlert("새 기업이 추가되었습니다.");
+        }
         setIsAddCompModal(false); 
         setNewComp(initialComp); 
-        showAlert("새 기업이 추가되었습니다.");
       };
 
       const handleAddBuyer = (e) => {
         e.preventDefault();
         if(!newBuyer.loginId || !newBuyer.password || !newBuyer.companyName) return showAlert("필수 항목을 입력해주세요.");
-        setData(prev => ({ ...prev, buyers: [{...newBuyer, id: 'buyer_'+Date.now()}, ...prev.buyers] }));
+        
+        if (newBuyer.id) {
+          // 수정 모드
+          setData(prev => ({ ...prev, buyers: prev.buyers.map(b => b.id === newBuyer.id ? newBuyer : b) }));
+          showAlert("바이어 정보가 성공적으로 수정되었습니다.");
+        } else {
+          // 추가 모드
+          setData(prev => ({ ...prev, buyers: [{...newBuyer, id: 'buyer_'+Date.now()}, ...prev.buyers] }));
+          showAlert("새 바이어가 추가되었습니다.");
+        }
         setIsAddBuyerModal(false); 
         setNewBuyer(initialBuyer); 
-        showAlert("새 바이어가 추가되었습니다.");
       };
 
       const deleteCompany = (id) => showConfirm("정말 이 기업을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, companies: prev.companies.filter(c => c.id !== id) })));
@@ -398,7 +414,7 @@
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                   <h2 className="text-lg font-bold text-gray-900">등록된 기업 ({companies.length})</h2>
-                  <Button onClick={() => setIsAddCompModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 기업 추가</Button>
+                  <Button onClick={() => { setNewComp(initialComp); setIsAddCompModal(true); }} className="w-full sm:w-auto shadow-sm">✨ 새 기업 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -417,6 +433,7 @@
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{c.brandEn || c.nameEn}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
                             <button onClick={() => setViewingCompany(c)} className="text-blue-600 font-bold hover:underline mr-3 sm:mr-4">상세 보기</button>
+                            <button onClick={() => { setNewComp(c); setIsAddCompModal(true); }} className="text-emerald-600 font-bold hover:underline mr-3 sm:mr-4">수정</button>
                             <button onClick={() => deleteCompany(c.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
@@ -430,7 +447,7 @@
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                   <h2 className="text-lg font-bold text-gray-900">등록된 바이어 ({buyers.length})</h2>
-                  <Button onClick={() => setIsAddBuyerModal(true)} className="w-full sm:w-auto shadow-sm">✨ 새 바이어 추가</Button>
+                  <Button onClick={() => { setNewBuyer(initialBuyer); setIsAddBuyerModal(true); }} className="w-full sm:w-auto shadow-sm">✨ 새 바이어 추가</Button>
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -449,6 +466,7 @@
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{b.companyName} ({b.firstName} {b.lastName})</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
                             <button onClick={() => setViewingBuyer(b)} className="text-blue-600 font-bold hover:underline mr-3 sm:mr-4">상세 보기</button>
+                            <button onClick={() => { setNewBuyer(b); setIsAddBuyerModal(true); }} className="text-emerald-600 font-bold hover:underline mr-3 sm:mr-4">수정</button>
                             <button onClick={() => deleteBuyer(b.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
@@ -491,7 +509,7 @@
           </div>
 
           {}
-          <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title="새 기업 계정 추가 (전체 정보)">
+          <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title={newComp.id ? "🏢 기업 정보 수정" : "✨ 새 기업 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddComp} className="space-y-6">
               
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
@@ -550,17 +568,17 @@
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가된 정보는 임시 저장되며, 구글 시트 연동시 자동 동기화됩니다.</p>
+              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가/수정된 정보는 구글 시트 연동시 자동 동기화됩니다.</p>
               
               <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
                 <Button variant="ghost" type="button" onClick={() => setIsAddCompModal(false)}>취소 (Cancel)</Button>
-                <Button type="submit" className="px-8 shadow-md">기업 추가하기</Button>
+                <Button type="submit" className="px-8 shadow-md">{newComp.id ? "수정 내용 저장" : "기업 추가하기"}</Button>
               </div>
             </form>
           </Modal>
 
           {}
-          <Modal isOpen={isAddBuyerModal} onClose={() => setIsAddBuyerModal(false)} title="새 바이어 계정 추가 (전체 정보)">
+          <Modal isOpen={isAddBuyerModal} onClose={() => setIsAddBuyerModal(false)} title={newBuyer.id ? "👤 바이어 정보 수정" : "✨ 새 바이어 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddBuyer} className="space-y-6">
               
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
@@ -612,11 +630,11 @@
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가된 정보는 임시 저장되며, 구글 시트 연동시 자동 동기화됩니다.</p>
+              <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가/수정된 정보는 구글 시트 연동시 자동 동기화됩니다.</p>
               
               <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
                 <Button variant="ghost" type="button" onClick={() => setIsAddBuyerModal(false)}>취소 (Cancel)</Button>
-                <Button type="submit" className="px-8 shadow-md">바이어 추가하기</Button>
+                <Button type="submit" className="px-8 shadow-md">{newBuyer.id ? "수정 내용 저장" : "바이어 추가하기"}</Button>
               </div>
             </form>
           </Modal>
