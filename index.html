@@ -118,7 +118,7 @@
       </div>
     );
 
-    const Badge = ({ status, children, className = '' }) => {
+    const Badge = ({ status, children, isEnglish = false, className = '' }) => {
       const styles = {
         pending: "bg-amber-100 text-amber-800 border-amber-200",
         accepted: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -126,12 +126,20 @@
         default: "bg-gray-100 text-gray-800 border-gray-200"
       };
       
-      let label = children || status.toUpperCase();
+      let label = children;
       if (!children) {
-         if (status === 'pending') label = '대기중';
-         if (status === 'accepted') label = '수락됨';
-         if (status === 'declined') label = '거절됨';
+         if (isEnglish) {
+             if (status === 'pending') label = 'PENDING';
+             if (status === 'accepted') label = 'ACCEPTED';
+             if (status === 'declined') label = 'DECLINED';
+         } else {
+             if (status === 'pending') label = '대기중';
+             if (status === 'accepted') label = '수락됨';
+             if (status === 'declined') label = '거절됨';
+         }
       }
+      
+      if(!label) label = status.toUpperCase();
 
       return (
         <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide border ${styles[status] || styles.default} ${className}`}>
@@ -141,23 +149,7 @@
     };
 
     const initialData = {
-      companies: [
-        {
-          id: 'comp_1', loginId: 'COMP01', password: 'pass123', 
-          nameEn: '주식회사 닥터오레고닌', brandEn: 'Dr. Oregonin', country: '한국',
-          contactName: '권예은 연구원', contactPhone: '+82 10-0000-0000', contactEmail: 'info@dr-oregonin.com',
-          website: 'https://dr-oregonin.com', logoUrl: '',
-          businessArea: '뷰티·식품 / 화장품, 건강기능식품 등 그린바이오',
-          introEn: '강원대학교 교수 창업 기반의 천연물 바이오 소재 연구개발 전문 기업입니다. 강원지역 자생 산림자원을 활용해 항노화 및 기능성 헤어케어, 스킨케어, 건강기능식품 등을 독자적으로 상용화하고 있습니다.',
-          competitiveness: '• 100종 이상의 고함량 폴리페놀 약효 물질 DB, SCI급 국제 논문, 인체적용시험 데이터 및 특허 보유\n• 샴푸, 트리트먼트, 화장품, 건강기능식품 등 복수 카테고리 세트 제안 가능\n• 미국 H-MART, 홍콩 Big C, 싱가포르 등 해외 대형 유통망 입점 확정',
-          products: '• Taxifolin Plus Shampoo ($12 / MOQ 500개)\n• Orethistle Platinum ($12 / MOQ 500개)',
-          exportStatus: '미국, 싱가포르, 홍콩, 베트남',
-          targetBuyer: '미국 / 온·오프라인 몰 운영 바이어 및 벤더사',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          productImagesLink: '',
-          productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: ''
-        }
-      ],
+      companies: [],
       buyers: [],
       meetings: []
     };
@@ -252,7 +244,7 @@
           setSessionData(buyer);
           return;
         }
-        showAlert("Invalid ID or Password. Please check your credentials.");
+        showAlert("아이디 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.");
       };
 
       const handleDevReset = () => {
@@ -331,7 +323,6 @@
       const [viewingCompany, setViewingCompany] = useState(null);
       const [viewingBuyer, setViewingBuyer] = useState(null);
 
-      // 상세 정보 표시용 헬퍼 컴포넌트
       const DetailRow = ({ label, value }) => (
         <div className="py-3 border-b border-gray-100 flex flex-col sm:flex-row gap-1 sm:gap-4 last:border-0">
           <span className="text-xs sm:text-sm font-bold text-gray-500 w-full sm:w-1/3 break-keep">{label}</span>
@@ -339,27 +330,22 @@
         </div>
       );
 
-      // 기업 전체 스키마 적용
       const initialComp = { loginId: '', password: '', nameEn: '', brandEn: '', country: '', website: '', logoUrl: '', contactName: '', contactPhone: '', contactEmail: '', businessArea: '', introEn: '', competitiveness: '', products: '', exportStatus: '', targetBuyer: '', productImagesLink: '', productImage1: '', productImage2: '', productImage3: '', productImage4: '', productImage5: '', youtubeUrl: '' };
       const [isAddCompModal, setIsAddCompModal] = useState(false);
       const [newComp, setNewComp] = useState(initialComp);
 
-      // 바이어 전체 스키마 적용
       const initialBuyer = { loginId: '', password: '', firstName: '', lastName: '', position: '', mobile: '', email: '', timeSlots: '', companyName: '', country: '', website: '', address: '', businessType: '', targetCategories: '', history: '', logoUrl: '', officialEmail: '', companyIntro: '', employees: '', establishedYear: '', annualRevenue: '' };
       const [isAddBuyerModal, setIsAddBuyerModal] = useState(false);
       const [newBuyer, setNewBuyer] = useState(initialBuyer);
 
-      // 계정 추가 및 수정 핸들러 (통합)
       const handleAddComp = (e) => {
         e.preventDefault();
         if(!newComp.loginId || !newComp.password || !newComp.brandEn) return showAlert("필수 항목을 입력해주세요.");
         
         if (newComp.id) {
-          // 수정 모드
           setData(prev => ({ ...prev, companies: prev.companies.map(c => c.id === newComp.id ? newComp : c) }));
           showAlert("기업 정보가 성공적으로 수정되었습니다.");
         } else {
-          // 추가 모드
           setData(prev => ({ ...prev, companies: [{...newComp, id: 'comp_'+Date.now()}, ...prev.companies] }));
           showAlert("새 기업이 추가되었습니다.");
         }
@@ -372,11 +358,9 @@
         if(!newBuyer.loginId || !newBuyer.password || !newBuyer.companyName) return showAlert("필수 항목을 입력해주세요.");
         
         if (newBuyer.id) {
-          // 수정 모드
           setData(prev => ({ ...prev, buyers: prev.buyers.map(b => b.id === newBuyer.id ? newBuyer : b) }));
           showAlert("바이어 정보가 성공적으로 수정되었습니다.");
         } else {
-          // 추가 모드
           setData(prev => ({ ...prev, buyers: [{...newBuyer, id: 'buyer_'+Date.now()}, ...prev.buyers] }));
           showAlert("새 바이어가 추가되었습니다.");
         }
@@ -410,7 +394,6 @@
             ))}
           </div>
 
-          {}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
              {activeTab === 'companies' && (
               <div className="p-4 sm:p-6">
@@ -510,10 +493,8 @@
              )}
           </div>
 
-          {}
           <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title={newComp.id ? "🏢 기업 정보 수정" : "✨ 새 기업 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddComp} className="space-y-6">
-              
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">🔐 로그인 계정 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -521,20 +502,17 @@
                   <Input label="비밀번호 (password, 필수)" value={newComp.password} onChange={e => setNewComp({...newComp, password: e.target.value})} required />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">🏢 기업 기본 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input label="법인명 (nameEn)" value={newComp.nameEn} onChange={e => setNewComp({...newComp, nameEn: e.target.value})} />
                   <Input label="브랜드명 (brandEn, 필수)" value={newComp.brandEn} onChange={e => setNewComp({...newComp, brandEn: e.target.value})} required />
                   <Input label="국가 (country)" value={newComp.country} onChange={e => setNewComp({...newComp, country: e.target.value})} />
-                  
                   <Input label="비즈니스 분야 (businessArea)" value={newComp.businessArea} onChange={e => setNewComp({...newComp, businessArea: e.target.value})} />
                   <Input label="웹사이트 (website)" value={newComp.website} onChange={e => setNewComp({...newComp, website: e.target.value})} />
                   <Input label="로고 URL (logoUrl)" value={newComp.logoUrl} onChange={e => setNewComp({...newComp, logoUrl: e.target.value})} />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">👤 담당자 연락처</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -543,7 +521,6 @@
                   <Input label="이메일 (contactEmail)" value={newComp.contactEmail} onChange={e => setNewComp({...newComp, contactEmail: e.target.value})} />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">📝 기업 소개 및 제품 정보</h4>
                 <div className="space-y-4">
@@ -556,7 +533,6 @@
                   <Input label="타겟 바이어 (targetBuyer)" value={newComp.targetBuyer} onChange={e => setNewComp({...newComp, targetBuyer: e.target.value})} />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">🖼️ 홍보 및 미디어 URL</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -569,9 +545,7 @@
                   <Input label="제품 이미지 5 (productImage5)" value={newComp.productImage5} onChange={e => setNewComp({...newComp, productImage5: e.target.value})} />
                 </div>
               </div>
-
               <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가/수정된 정보는 구글 시트 연동시 자동 동기화됩니다.</p>
-              
               <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
                 <Button variant="ghost" type="button" onClick={() => setIsAddCompModal(false)}>취소 (Cancel)</Button>
                 <Button type="submit" className="px-8 shadow-md">{newComp.id ? "수정 내용 저장" : "기업 추가하기"}</Button>
@@ -579,10 +553,8 @@
             </form>
           </Modal>
 
-          {}
           <Modal isOpen={isAddBuyerModal} onClose={() => setIsAddBuyerModal(false)} title={newBuyer.id ? "👤 바이어 정보 수정" : "✨ 새 바이어 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddBuyer} className="space-y-6">
-              
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">🔐 로그인 계정 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -590,7 +562,6 @@
                   <Input label="비밀번호 (password, 필수)" value={newBuyer.password} onChange={e => setNewBuyer({...newBuyer, password: e.target.value})} required />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">👤 바이어 개인 / 담당자 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -602,25 +573,21 @@
                   <Input label="미팅 가능 시간 (timeSlots)" value={newBuyer.timeSlots} onChange={e => setNewBuyer({...newBuyer, timeSlots: e.target.value})} />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">🏢 회사 기본 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input label="회사명 (companyName, 필수)" value={newBuyer.companyName} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
                   <Input label="국가 (country)" value={newBuyer.country} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
                   <Input label="웹사이트 (website)" value={newBuyer.website} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
-                  
                   <Input label="직원 수 (employees)" value={newBuyer.employees} onChange={e => setNewBuyer({...newBuyer, employees: e.target.value})} />
                   <Input label="설립 연도 (establishedYear)" value={newBuyer.establishedYear} onChange={e => setNewBuyer({...newBuyer, establishedYear: e.target.value})} />
                   <Input label="연 매출 (annualRevenue)" value={newBuyer.annualRevenue} onChange={e => setNewBuyer({...newBuyer, annualRevenue: e.target.value})} />
-                  
                   <div className="col-span-1 md:col-span-2">
                     <Input label="회사 상세 주소 (address)" value={newBuyer.address} onChange={e => setNewBuyer({...newBuyer, address: e.target.value})} />
                   </div>
                   <Input label="대표 이메일 (officialEmail)" value={newBuyer.officialEmail} onChange={e => setNewBuyer({...newBuyer, officialEmail: e.target.value})} />
                 </div>
               </div>
-
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
                 <h4 className="font-bold text-gray-800 mb-4 flex items-center">📊 비즈니스 및 관심 분야</h4>
                 <div className="space-y-4">
@@ -631,9 +598,7 @@
                   <Input label="회사 로고 URL (logoUrl)" value={newBuyer.logoUrl} onChange={e => setNewBuyer({...newBuyer, logoUrl: e.target.value})} />
                 </div>
               </div>
-
               <p className="text-xs text-gray-500 mt-2 font-bold text-center">* 관리자 패널에서 추가/수정된 정보는 구글 시트 연동시 자동 동기화됩니다.</p>
-              
               <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t p-4 -mx-5 -mb-5 mt-4 rounded-b-3xl shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
                 <Button variant="ghost" type="button" onClick={() => setIsAddBuyerModal(false)}>취소 (Cancel)</Button>
                 <Button type="submit" className="px-8 shadow-md">{newBuyer.id ? "수정 내용 저장" : "바이어 추가하기"}</Button>
@@ -755,10 +720,10 @@
                           <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
                           {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미상'}</p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
                         <div className="text-sm text-gray-600 space-y-1">
                           <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
-                          <p><span className="font-semibold text-gray-900">국가:</span> {b.country || 'N/A'}</p>
+                          <p><span className="font-semibold text-gray-900">국가:</span> {b.country || '미입력'}</p>
                         </div>
                       </div>
                       <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex flex-col gap-2">
@@ -811,6 +776,7 @@
           <Modal isOpen={!!selectedBuyerId} onClose={() => setSelectedBuyerId(null)} title="바이어 상세 프로필">
             {viewBuyer && (
                 <div className="space-y-6 sm:space-y-8 pb-6">
+                  {/* Hero Section */}
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
                      <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-blue-50/50 rounded-bl-full -z-10"></div>
                      <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center p-4 flex-shrink-0 z-10">
@@ -827,15 +793,22 @@
                      </div>
                   </div>
 
+                  {/* 비즈니스 유형 (따로 분리됨) */}
+                  <div className="bg-indigo-50/50 border border-indigo-100 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                     <h4 className="font-black text-indigo-900 text-lg flex items-center">
+                        <span className="text-indigo-500 mr-2 text-xl">🏢</span> 비즈니스 유형
+                     </h4>
+                     <div className="bg-white px-5 py-2.5 rounded-xl shadow-sm font-bold text-indigo-700 text-base border border-indigo-50 text-center sm:text-right w-full sm:w-auto">
+                        {viewBuyer.businessType || "-"}
+                     </div>
+                  </div>
+
+                  {/* Fact Sheet */}
                   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                      <h4 className="font-black text-gray-900 text-lg mb-6 flex items-center border-b border-gray-100 pb-4">
                         <span className="text-blue-500 mr-2 text-xl">📌</span> 핵심 정보 (At a Glance)
                      </h4>
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
-                        <div>
-                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">비즈니스 유형</p>
-                           <p className="font-bold text-gray-900 text-base">{viewBuyer.businessType || "-"}</p>
-                        </div>
                         <div>
                            <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">직원 수</p>
                            <p className="font-bold text-gray-900 text-base">{viewBuyer.employees ? `${viewBuyer.employees} 명` : "-"}</p>
@@ -847,6 +820,10 @@
                         <div>
                            <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">연 매출</p>
                            <p className="font-bold text-gray-900 text-base">{viewBuyer.annualRevenue || "-"}</p>
+                        </div>
+                        <div>
+                           <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">한국기업 거래이력</p>
+                           <div className="font-bold text-gray-900 text-sm whitespace-pre-wrap max-h-20 overflow-y-auto custom-scrollbar pr-2">{viewBuyer.history || "-"}</div>
                         </div>
                         
                         <div className="col-span-2">
@@ -869,6 +846,7 @@
                      </div>
                   </div>
 
+                  {/* Long Text Sections */}
                   <div className="space-y-6">
                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                         <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🏢</span> 회사 소개</h4>
@@ -879,11 +857,6 @@
                         <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🎯</span> 관심 (타겟) 카테고리</h4>
                         <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50">{viewBuyer.targetCategories || "입력된 정보가 없습니다."}</div>
                      </div>
-
-                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                        <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">💼</span> 한국 기업과의 거래 이력</h4>
-                        <div className="text-base text-gray-700 font-medium whitespace-pre-wrap leading-loose">{viewBuyer.history || "입력된 정보가 없습니다."}</div>
-                     </div>
                   </div>
 
                   <div className="bg-gray-100 text-gray-600 p-4 rounded-xl text-xs sm:text-sm text-center font-semibold mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-2">
@@ -891,6 +864,7 @@
                     보안 정책에 따라 개인 연락처(이메일, 휴대폰)는 블라인드 처리되었습니다.
                   </div>
 
+                  {/* Meeting Request Action inside Modal */}
                   <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
                       <div className="text-center sm:text-left">
                         <h4 className="font-extrabold text-lg sm:text-xl text-gray-900">이 바이어와 미팅을 원하시나요?</h4>
@@ -906,7 +880,6 @@
                         )}
                       </div>
                   </div>
-
                 </div>
             )}
           </Modal>
@@ -954,7 +927,7 @@
                 const compMeeting = meetings.find(m => m.buyerId === sessionData.id && m.companyId === company.id);
                 return (
                   <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col relative group cursor-pointer border-t-4 border-t-[#FDB827]">
-                    {compMeeting && <div className="absolute top-4 right-4 z-10"><Badge status={compMeeting.status} /></div>}
+                    {compMeeting && <div className="absolute top-4 right-4 z-10"><Badge status={compMeeting.status} isEnglish={true} /></div>}
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
                       <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
@@ -1003,7 +976,7 @@
                               <span className="text-xs sm:text-sm text-gray-500 mt-1">Review Profile &rarr;</span>
                             </button>
                           </td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} /></td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} isEnglish={true} /></td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
                             {m.status === 'pending' && (
                               <>
@@ -1132,7 +1105,7 @@
                          <Button onClick={() => handleRequestMeeting(selectedCompany.id)} className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base shadow-xl shadow-amber-200/50">🗓️ Request a Meeting</Button>
                       ) : (
                          <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                            Status: <Badge status={currentMeeting.status} className="ml-2 sm:ml-3" />
+                            Status: <Badge status={currentMeeting.status} isEnglish={true} className="ml-2 sm:ml-3" />
                          </div>
                       )}
                     </div>
@@ -1267,7 +1240,6 @@
         return null;
       });
 
-      // 세션 상태가 바뀔 때마다 브라우저 로컬 스토리지에 자동 저장
       useEffect(() => {
         if (sessionRole) localStorage.setItem('expo_sessionRole', sessionRole);
         else localStorage.removeItem('expo_sessionRole');
@@ -1293,7 +1265,6 @@
 
       const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDK5sINH_5FS8iqmecDQPKk44pfms62mTEdKDKnnqjVsx_ZVAGqxY-l6YRcBFzjstZ9A/exec"; 
 
-      // 💡 스마트 데이터 정규화(Normalization): 구글 시트 탭 이름이 뭐든간에 강제로 맵핑시킴
       const normalizeSheetData = (rawData) => {
         const result = { companies: [], buyers: [], meetings: [] };
         if (!rawData) return result;
@@ -1309,7 +1280,6 @@
           }
         });
         
-        // 완전히 일치하는 키가 우선 (예외 방지)
         if (result.companies.length === 0 && rawData.companies) result.companies = rawData.companies;
         if (result.buyers.length === 0 && rawData.buyers) result.buyers = rawData.buyers;
         
@@ -1332,7 +1302,7 @@
               localStorage.setItem('expo_data', JSON.stringify(normalizedData)); 
             }
           } catch (error) {
-            console.error("구글 시트 연동 오류 (앱스 스크립트 URL 및 배포 버전 확인 필요):", error);
+            console.error("구글 시트 연동 오류:", error);
           } finally {
             setIsLoading(false);
           }
