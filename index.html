@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>(승)ASEAN Market Expo Portal</title>
+  <title>ASEAN Market Expo Portal</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -257,6 +257,8 @@
 
       const handleDevReset = () => {
         localStorage.removeItem('expo_data');
+        localStorage.removeItem('expo_sessionRole');
+        localStorage.removeItem('expo_sessionData');
         window.location.reload();
       };
 
@@ -813,8 +815,25 @@
     );
 
     function App() {
-      const [sessionRole, setSessionRole] = useState(null);
-      const [sessionData, setSessionData] = useState(null);
+      const [sessionRole, setSessionRole] = useState(() => localStorage.getItem('expo_sessionRole') || null);
+      const [sessionData, setSessionData] = useState(() => {
+        const saved = localStorage.getItem('expo_sessionData');
+        if (saved) {
+           try { return JSON.parse(saved); } catch(e) {}
+        }
+        return null;
+      });
+
+      // 세션 상태가 바뀔 때마다 브라우저 로컬 스토리지에 자동 저장
+      useEffect(() => {
+        if (sessionRole) localStorage.setItem('expo_sessionRole', sessionRole);
+        else localStorage.removeItem('expo_sessionRole');
+      }, [sessionRole]);
+
+      useEffect(() => {
+        if (sessionData) localStorage.setItem('expo_sessionData', JSON.stringify(sessionData));
+        else localStorage.removeItem('expo_sessionData');
+      }, [sessionData]);
       
       const [data, setData] = useState(() => {
         const saved = localStorage.getItem('expo_data');
