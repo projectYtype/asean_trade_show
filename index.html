@@ -889,7 +889,7 @@
                         </div>
                         <div className="col-span-2">
                            <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">웹사이트</p>
-                           <a href={viewBuyer.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.website || "-"}</a>
+                           <a href={viewBuyer.website ? (viewBuyer.website.startsWith('http') ? viewBuyer.website : `https://${viewBuyer.website}`) : '#'} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.website || "-"}</a>
                         </div>
                         
                         <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
@@ -1077,7 +1077,7 @@
                    </div>
                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                       <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
-                      <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
+                      <a href={selectedCompany.website ? (selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`) : '#'} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
                    </div>
                 </div>
 
