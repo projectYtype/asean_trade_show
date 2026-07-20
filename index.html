@@ -672,6 +672,15 @@
       const [activeSubTab, setActiveSubTab] = useState('directory'); 
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
 
+      // 🌟 [추가된 부분 1] 국가 필터 상태 및 데이터 자동 추출
+      const [selectedCountry, setSelectedCountry] = useState('All');
+      const uniqueCountries = ['All', ...new Set(buyers.map(b => b.country).filter(Boolean))];
+      
+      // 🌟 [추가된 부분 2] 선택된 국가에 맞게 바이어 목록 필터링
+      const filteredBuyers = selectedCountry === 'All' 
+        ? buyers 
+        : buyers.filter(b => b.country === selectedCountry);
+
       const myIncomingRequests = meetings.filter(m => m.companyId === sessionData.id && m.requestedBy === 'buyer');
       const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
 
@@ -710,49 +719,71 @@
 
           {activeSubTab === 'directory' && (
             <div className="animate-slide-up">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {buyers.map(b => {
-  const myMtg = meetings.find(m => m.companyId === sessionData.id && m.buyerId === b.id);
-  return (
-    // Card의 클래스 중 overflow-visible을 overflow-hidden으로 변경하여 로고가 카드 모서리에 맞게 둥글게 처리되도록 합니다.
-    <Card key={b.id} hover onClick={() => setSelectedBuyerId(b.id)} className="flex flex-col overflow-hidden group">
-      
-      {/* 👇 새로 추가된 바이어 로고 영역 👇 */}
-      <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-        <DriveImage 
-          url={b.logoUrl} 
-          alt="Buyer Logo" 
-          className="object-contain h-full w-full mix-blend-multiply" 
-          fallbackText="No Logo" 
-        />
-      </div>
-      {/* 👆 새로 추가된 바이어 로고 영역 👆 */}
+              
+              {/* 🌟 [추가된 부분 3] 국가별 필터 버튼 UI 영역 */}
+              <div className="flex gap-2 overflow-x-auto pb-4 mb-6 hide-scrollbar items-center">
+                {uniqueCountries.map(country => (
+                  <button
+                    key={country}
+                    onClick={() => setSelectedCountry(country)}
+                    className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 ${
+                      selectedCountry === country
+                        ? 'bg-[#FDB827] text-gray-900 shadow-md transform -translate-y-0.5' 
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                    }`}
+                  >
+                    {country === 'All' ? '🌐 전체 국가' : `📍 ${country}`}
+                  </button>
+                ))}
+              </div>
 
-      <div className="p-5 sm:p-6 flex-grow">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
-          {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
-        </div>
-        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
-        <div className="text-sm text-gray-600 space-y-1">
-          <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
-          <p><span className="font-semibold text-gray-900">국가:</span> {b.country || '미입력'}</p>
-        </div>
-      </div>
-      
-      <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
-        {!myMtg ? (
-          <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(b.id); }} className="w-full relative z-10 shadow-sm">🗓️ 미팅 신청하기</Button>
-        ) : (
-          <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
-            {myMtg.requestedBy === 'company' ? '내가 신청한 미팅입니다.' : '바이어가 신청한 미팅입니다.'}
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-})}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                
+                {/* 🌟 [수정된 부분 4] 기존 buyers.map -> filteredBuyers.map 으로 교체 */}
+                {filteredBuyers.length === 0 ? (
+                  <div className="col-span-full py-12 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">
+                    해당 국가의 바이어가 없습니다.
+                  </div>
+                ) : (
+                  filteredBuyers.map(b => {
+                    const myMtg = meetings.find(m => m.companyId === sessionData.id && m.buyerId === b.id);
+                    return (
+                      <Card key={b.id} hover onClick={() => setSelectedBuyerId(b.id)} className="flex flex-col overflow-hidden group">
+                        <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
+                          <DriveImage 
+                            url={b.logoUrl} 
+                            alt="Buyer Logo" 
+                            className="object-contain h-full w-full mix-blend-multiply" 
+                            fallbackText="No Logo" 
+                          />
+                        </div>
+
+                        <div className="p-5 sm:p-6 flex-grow">
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
+                            {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
+                          </div>
+                          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
+                            <p><span className="font-semibold text-gray-900">국가:</span> {b.country || '미입력'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
+                          {!myMtg ? (
+                            <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(b.id); }} className="w-full relative z-10 shadow-sm">🗓️ 미팅 신청하기</Button>
+                          ) : (
+                            <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
+                              {myMtg.requestedBy === 'company' ? '내가 신청한 미팅입니다.' : '바이어가 신청한 미팅입니다.'}
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -808,7 +839,7 @@
                      </div>
                   </div>
 
-                  {/* 비즈니스 유형 (따로 분리됨) */}
+                  {/* 비즈니스 유형 */}
                   <div className="bg-indigo-50/50 border border-indigo-100 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                      <h4 className="font-black text-indigo-900 text-lg flex items-center">
                         <span className="text-indigo-500 mr-2 text-xl">🏢</span> 비즈니스 유형
