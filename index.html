@@ -672,14 +672,14 @@
       const [activeSubTab, setActiveSubTab] = useState('directory'); 
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
 
-      // 🌟 [추가된 부분 1] 국가 필터 상태 및 데이터 자동 추출
+      // 국가 필터 상태 및 데이터 자동 추출 (안전한 공백 제거 포함)
       const [selectedCountry, setSelectedCountry] = useState('All');
-      const uniqueCountries = ['All', ...new Set(buyers.map(b => b.country).filter(Boolean))];
+      const uniqueCountries = ['All', ...new Set(buyers.map(b => (b.country || '').trim()).filter(Boolean))];
       
-      // 🌟 [추가된 부분 2] 선택된 국가에 맞게 바이어 목록 필터링
+      // 선택된 국가에 맞게 바이어 목록 필터링
       const filteredBuyers = selectedCountry === 'All' 
         ? buyers 
-        : buyers.filter(b => b.country === selectedCountry);
+        : buyers.filter(b => (b.country || '').trim() === selectedCountry);
 
       const myIncomingRequests = meetings.filter(m => m.companyId === sessionData.id && m.requestedBy === 'buyer');
       const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
@@ -720,7 +720,7 @@
           {activeSubTab === 'directory' && (
             <div className="animate-slide-up">
               
-              {/* 🌟 [추가된 부분 3] 국가별 필터 버튼 UI 영역 */}
+              {/* 국가별 필터 버튼 UI 영역 */}
               <div className="flex gap-2 overflow-x-auto pb-4 mb-6 hide-scrollbar items-center">
                 {uniqueCountries.map(country => (
                   <button
@@ -739,7 +739,6 @@
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 
-                {/* 🌟 [수정된 부분 4] 기존 buyers.map -> filteredBuyers.map 으로 교체 */}
                 {filteredBuyers.length === 0 ? (
                   <div className="col-span-full py-12 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">
                     해당 국가의 바이어가 없습니다.
