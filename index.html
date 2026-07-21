@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title> ASEAN Korea Beauty Trade Show Portal</title>
@@ -56,6 +57,27 @@
     .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
     .animate-zoom-in { animation: zoomIn 0.2s ease-out forwards; }
   </style>
+  <script>
+  // 페이지가 로드되면 실행
+  document.addEventListener("DOMContentLoaded", function() {
+    // URL에서 파라미터(?id=...&pw=...)를 가져옵니다.
+    const urlParams = new URLSearchParams(window.location.search);
+    const passedId = urlParams.get('id');
+    const passedPw = urlParams.get('pw');
+
+    // ID 값이 있으면 아이디 입력칸에 채워 넣기
+    if (passedId) {
+      // 'login-id-input' 부분을 실제 웹사이트의 아이디 <input> 태그 id 값으로 변경하세요.
+      document.getElementById('login-id-input').value = passedId; 
+    }
+    
+    // PW 값이 있으면 비밀번호 입력칸에 채워 넣기
+    if (passedPw) {
+      // 'login-pw-input' 부분을 실제 웹사이트의 비밀번호 <input> 태그 id 값으로 변경하세요.
+      document.getElementById('login-pw-input').value = passedPw;
+    }
+  });
+</script>
 </head>
 <body>
   <div id="root"></div>
