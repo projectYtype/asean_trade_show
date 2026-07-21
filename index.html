@@ -1556,7 +1556,7 @@
             }
           } catch (error) {
             console.error("구글 시트 연동 오류:", error);
-          } fontFinally {
+          } finally {  // <--- ✅ 이렇게 수정해 주세요!
             setIsLoading(false);
           }
         };
