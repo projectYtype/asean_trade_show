@@ -129,11 +129,11 @@
       let label = children;
       if (!children) {
          if (isEnglish) {
-             if (status === 'pending') label = 'PENDING';
+             if (status === 'pending') label = 'REQUESTED';
              if (status === 'accepted') label = 'ACCEPTED';
              if (status === 'declined') label = 'DECLINED';
          } else {
-             if (status === 'pending') label = '대기중';
+             if (status === 'pending') label = 'Requested'; 
              if (status === 'accepted') label = '수락됨';
              if (status === 'declined') label = '거절됨';
          }
@@ -696,8 +696,9 @@
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
       const [selectedCountryFilter, setSelectedCountryFilter] = useState('All');
 
-      const myIncomingRequests = meetings.filter(m => m.companyId === sessionData.id && m.requestedBy === 'buyer');
-      const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
+      // (수정) 내가 받은 요청뿐만 아니라 보낸 요청도 함께 가져오기
+      const allMyRequests = meetings.filter(m => m.companyId === sessionData.id);
+      const pendingIncomingCount = allMyRequests.filter(m => m.status === 'pending' && m.requestedBy === 'buyer').length;
 
       const handleAccept = (id) => { setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'accepted' } : m) })); showAlert("미팅이 수락되었습니다."); };
       const handleDecline = (id) => showConfirm("이 미팅을 거절하시겠습니까?", () => setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'declined' } : m) })));
@@ -716,7 +717,6 @@
       const uniqueCountries = useMemo(() => {
         const countries = buyers.map(b => (b.country || '').trim() || '미입력');
         const unique = [...new Set(countries)].sort();
-        // '미입력'은 리스트 가장 마지막에 표시
         return ['All', ...unique.filter(c => c !== '미입력'), ...(unique.includes('미입력') ? ['미입력'] : [])];
       }, [buyers]);
 
@@ -742,12 +742,11 @@
                   👥 바이어 탐색
                 </button>
                 <button onClick={() => setActiveSubTab('requests')} className={`flex-1 md:flex-none whitespace-nowrap relative px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'requests' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                  📨 받은 요청 {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
+                  📨 미팅 요청 내역 {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
                 </button>
               </div>
           </div>
 
-          {}
           {activeSubTab === 'directory' && (
             <div className="animate-slide-up">
               
@@ -825,25 +824,37 @@
           {activeSubTab === 'requests' && (
             <div className="animate-slide-up">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">바이어 미팅 요청 내역</h2>
-                {pendingIncomingCount > 0 && <Button onClick={handleAcceptAll} variant="secondary" className="w-full sm:w-auto">✨ 전체 수락</Button>}
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">미팅 요청 내역 (전체)</h2>
+                {pendingIncomingCount > 0 && <Button onClick={handleAcceptAll} variant="secondary" className="w-full sm:w-auto">✨ 전체 수락 (받은 요청)</Button>}
               </div>
               
-              {myIncomingRequests.length === 0 ? <p className="text-gray-500">받은 요청이 없습니다.</p> : (
+              {allMyRequests.length === 0 ? <p className="text-gray-500">요청 내역이 없습니다.</p> : (
                   <div className="space-y-4">
-                     {myIncomingRequests.map(m => {
+                     {allMyRequests.map(m => {
                          const b = buyers.find(buyer => buyer.id === m.buyerId);
+                         const isIncoming = m.requestedBy === 'buyer';
                          return (
                             <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                      {isIncoming ? '받은 요청' : '보낸 요청'}
+                                    </span>
+                                  </div>
                                   <p className="font-bold text-lg text-gray-900">{b?.companyName || '알 수 없는 바이어'}</p>
                                   <div className="mt-2"><Badge status={m.status} /></div>
                                </div>
-                               {m.status === 'pending' && (
-                                   <div className="flex gap-2 w-full sm:w-auto">
+                               
+                               {/* 받은 요청일 경우 수락/거절 노출, 보낸 요청이면 상태만 노출 */}
+                               {isIncoming && m.status === 'pending' ? (
+                                   <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
                                        <Button onClick={() => handleAccept(m.id)} className="flex-1 sm:flex-none">수락</Button>
                                        <Button variant="ghost" onClick={() => handleDecline(m.id)} className="flex-1 sm:flex-none bg-gray-100">거절</Button>
                                    </div>
+                               ) : (
+                                   !isIncoming && m.status === 'pending' && (
+                                      <span className="text-sm text-gray-400 font-bold mt-2 sm:mt-0 block">응답 대기중...</span>
+                                   )
                                )}
                             </div>
                          )
@@ -972,8 +983,9 @@
       const [selectedCompany, setSelectedCompany] = useState(null);
       const [activeSubTab, setActiveSubTab] = useState('directory');
 
-      const myIncomingRequests = meetings.filter(m => m.buyerId === sessionData.id && m.requestedBy === 'company');
-      const pendingIncomingCount = myIncomingRequests.filter(m => m.status === 'pending').length;
+      // (수정) 내가 받은 요청뿐만 아니라 보낸 요청도 함께 가져오기
+      const allMyRequests = meetings.filter(m => m.buyerId === sessionData.id);
+      const pendingIncomingCount = allMyRequests.filter(m => m.status === 'pending' && m.requestedBy === 'company').length;
 
       const handleRequestMeeting = (companyId) => { setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: sessionData.id, companyId, status: 'pending', requestedBy: 'buyer' }] })); showAlert("Meeting request sent successfully."); };
       const handleAcceptMtg = (id) => { setData(prev => ({ ...prev, meetings: prev.meetings.map(m => m.id === id ? { ...m, status: 'accepted' } : m) })); showAlert("Meeting accepted."); };
@@ -996,7 +1008,7 @@
                 🏢 Browse Companies
               </button>
               <button onClick={() => setActiveSubTab('incoming')} className={`flex-1 md:flex-none whitespace-nowrap relative px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'incoming' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                📨 Incoming Pitches {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
+                📨 Meeting Requests {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
               </button>
             </div>
           </div>
@@ -1034,7 +1046,7 @@
           {activeSubTab === 'incoming' && (
             <div className="animate-slide-up">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Incoming Pitches from Brands</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Meeting Requests</h2>
                 {pendingIncomingCount > 0 && <Button onClick={handleAcceptAllIncoming} variant="secondary" className="w-full sm:w-auto">✨ Accept All Pending</Button>}
               </div>
               <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
@@ -1047,24 +1059,34 @@
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {myIncomingRequests.length === 0 && <tr><td colSpan="3" className="px-6 py-16 text-center text-gray-400 font-medium">No active pitches from companies.</td></tr>}
-                    {myIncomingRequests.map(m => {
+                    {allMyRequests.length === 0 && <tr><td colSpan="3" className="px-6 py-16 text-center text-gray-400 font-medium">No meeting requests.</td></tr>}
+                    {allMyRequests.map(m => {
                       const comp = companies.find(c => c.id === m.companyId);
+                      const isIncoming = m.requestedBy === 'company';
                       return (
                         <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
-                            <button onClick={() => setSelectedCompany(comp)} className="text-left group">
-                              <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{comp?.brandEn || 'Unknown'}</span>
-                              <span className="text-xs sm:text-sm text-gray-500 mt-1">Review Profile &rarr;</span>
-                            </button>
+                            <div className="flex flex-col items-start gap-1">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                {isIncoming ? 'Received' : 'Sent'}
+                              </span>
+                              <button onClick={() => setSelectedCompany(comp)} className="text-left group mt-1">
+                                <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{comp?.brandEn || 'Unknown'}</span>
+                                <span className="text-xs sm:text-sm text-gray-500">Review Profile &rarr;</span>
+                              </button>
+                            </div>
                           </td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} isEnglish={true} /></td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
-                            {m.status === 'pending' && (
+                            {isIncoming && m.status === 'pending' ? (
                               <>
                                 <Button onClick={() => handleAcceptMtg(m.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 ring-0 px-3 py-1.5 sm:px-5 sm:py-2.5">Accept</Button>
                                 <Button onClick={() => handleDeclineMtg(m.id)} variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 sm:px-5 sm:py-2.5">Decline</Button>
                               </>
+                            ) : (
+                              !isIncoming && m.status === 'pending' && (
+                                 <span className="text-sm text-gray-400 font-bold">Waiting for response...</span>
+                              )
                             )}
                           </td>
                         </tr>
@@ -1200,93 +1222,9 @@
       );
     };
 
-    const GuestDashboard = ({ data }) => {
-      const { companies = [] } = data || {};
-      const [selectedCompany, setSelectedCompany] = useState(null);
-
-      return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in space-y-8">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
-            <div className="bg-gradient-to-br from-[#FDB827] to-amber-300 p-8 sm:p-12 text-center relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-               <h2 className="relative z-10 text-3xl sm:text-5xl font-black text-gray-900 mb-4 tracking-tighter uppercase">2026 ASEAN KOREA<br/>BEAUTY TRADE SHOW</h2>
-               <p className="relative z-10 text-lg sm:text-2xl font-bold text-gray-800">Supported by Seoul Business Agency (SBA)</p>
-            </div>
-            
-            <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
-               <div>
-                  <h3 className="text-2xl font-extrabold text-gray-900 mb-6 flex items-center"><span className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-3 text-lg">🎁</span> BUYER BENEFITS</h3>
-                  <ul className="space-y-4 text-gray-700 font-medium text-lg">
-                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> USD 100 Cash Provided On-site</li>
-                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Pre-arranged 1:1 B2B Meetings</li>
-                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Interpretation Support<br/><span className="text-sm text-gray-500 mt-1 block">(Korean-English / Korean-Indonesian)</span></li>
-                    <li className="flex items-start"><svg className="w-6 h-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Buffet Lunch Provided</li>
-                  </ul>
-               </div>
-
-               <div>
-                  <h3 className="text-2xl font-extrabold text-gray-900 mb-6 flex items-center"><span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-lg">📍</span> VENUES & DATES</h3>
-                  <div className="space-y-6">
-                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <h4 className="font-black text-xl text-gray-900">SINGAPORE</h4>
-                      <p className="text-gray-600 font-medium mt-1">August 25 | York Hotel</p>
-                    </div>
-                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                      <h4 className="font-black text-xl text-gray-900">JAKARTA, INDONESIA</h4>
-                      <p className="text-gray-600 font-medium mt-1">August 27 | Kempinski Hotel Jakarta</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-4 leading-tight">*Note: Business meetings held at the venue.</p> 
-                 <p className="text-xs text-gray-400 mt-4 leading-tight font-bold">Please note that accommodation and transportation are not provided.</p>
-               </div>
-            </div>
-
-            <div className="bg-gray-900 text-white p-8 text-center">
-              <p className="text-amber-400 font-black uppercase tracking-[0.35em] text-lg mb-2">[ Administration Office ]</p>
-              <p className="text-lg sm:text-xl font-medium">WhatsApp: <span className="font-bold">+82 10 8073 2332</span> | Email: <span className="font-bold text-amber-200">sumin.park@koreabridging.com</span></p>
-            </div>
-          </div>
-
-          <div className="text-center py-6">
-            <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-black transition-all duration-300 rounded-2xl focus:outline-none focus:ring-4 focus:ring-offset-2 bg-[#FDB827] text-gray-900 hover:bg-[#e5a620] hover:shadow-2xl hover:-translate-y-1 focus:ring-[#FDB827] shadow-xl shadow-amber-200/50 uppercase tracking-wide">
-              🔥 SIGN UP AS A BUYER NOW
-            </a>
-          </div>
-
-          <div className="pt-8 sm:pt-12 border-t border-gray-200">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Participating K-Beauty Brands</h2>
-              <p className="text-gray-500 mt-2 font-medium">Discover premium green-bio and cosmetics companies from Korea.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
-              {companies.map(company => (
-                <Card key={company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col cursor-pointer border-t-4 border-t-blue-500 group">
-                  <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
-                     <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
-                  </div>
-                  <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
-                     <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
-                        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">{company.businessArea || 'Korea Brand'}</p>
-                     </div>
-                     <div className="mt-4 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
-                         View Profile <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    };
-
     const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
       const [selectedSlots, setSelectedSlots] = useState([]);
 
-      // 기존 기록이 있으면 모달을 열 때 해당 슬롯을 미리 체크해둡니다.
       useEffect(() => {
         if (isOpen) {
           if (existingRecord && existingRecord['선택한 미팅 시간']) {
@@ -1297,13 +1235,48 @@
         }
       }, [isOpen, existingRecord]);
 
+      // 사용자 국가에 맞는 시간 문자열만 추출하는 헬퍼 함수
+      const getLocalizedTime = (fullTimeStr, userCountry) => {
+        if (!fullTimeStr) return "";
+        if (!userCountry) return fullTimeStr;
+        
+        const parts = fullTimeStr.split('|').map(s => s.trim());
+        if (parts.length === 1) return fullTimeStr;
+
+        // "Morning Session: " 같은 접두사 추출
+        const prefixMatch = parts[0].match(/^([^:]+:\s*)/);
+        const prefix = prefixMatch ? prefixMatch[1] : "";
+
+        // 검색할 국가명 정리 (예: South Korea -> korea)
+        let searchCountry = userCountry.toLowerCase();
+        if (searchCountry.includes('korea')) searchCountry = 'korea';
+
+        // 해당 국가명이 포함된 문자열 찾기
+        const matchedPart = parts.find(p => p.toLowerCase().includes(searchCountry));
+
+        if (matchedPart) {
+          // 일치하는 문자열이 접두사로 시작하지 않으면 접두사를 붙여줍니다.
+          if (prefix && !matchedPart.toLowerCase().startsWith(prefix.toLowerCase().trim())) {
+             return prefix + matchedPart;
+          }
+          return matchedPart;
+        }
+
+        // 일치하는 국가가 없으면 전체 문자열 반환
+        return fullTimeStr;
+      };
+
       if (!isOpen || !data.meetingSettings) return null;
 
-      // 💡 [핵심 수정 포인트] 앱스스크립트가 데이터를 역순으로 보내기 때문에, 미팅 설정만 다시 뒤집어 시트의 원래(위->아래) 순서로 복구합니다.
       const originalSettings = [...data.meetingSettings].reverse();
 
       const availableDates = Array.from(new Set(originalSettings.map(item => item['미팅 날짜'] || item['날짜']).filter(Boolean)));
-      const availableTimes = Array.from(new Set(originalSettings.map(item => item['미팅 시간'] || item['시간']).filter(Boolean)));
+      
+      // 시간을 추출할 때 접속한 유저의 국가(country) 정보에 맞춰 문자열을 자릅니다.
+      const availableTimes = Array.from(new Set(originalSettings.map(item => {
+         const fullTime = item['미팅 시간'] || item['시간'];
+         return getLocalizedTime(fullTime, sessionData.country);
+      }).filter(Boolean)));
 
       const toggleSlot = (slot) => {
         if (selectedSlots.includes(slot)) setSelectedSlots(selectedSlots.filter(s => s !== slot));
@@ -1560,7 +1533,8 @@
              <div className="absolute inset-0 bg-cover bg-left lg:bg-center bg-no-repeat opacity-10" style={{ backgroundImage: `url('https://drive.google.com/thumbnail?id=1cPcVCt5c7AOHeAc55OcgfFd3oALFgSft&sz=w1920')` }}></div>
              <div className="relative z-10 flex flex-col items-center bg-white/80 p-6 sm:p-8 rounded-3xl backdrop-blur-sm shadow-xl text-center">
                <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#FDB827] border-t-transparent rounded-full animate-spin mb-4 sm:mb-6"></div>
-               <p className="text-gray-900 font-extrabold text-lg sm:text-xl tracking-tight">데이터를 동기화하는 중입니다...</p>
+               {/* 1. 데이터를 동기화하는 중입니다... -> Syncing data... 로 변경됨 */}
+               <p className="text-gray-900 font-extrabold text-lg sm:text-xl tracking-tight">Syncing data...</p>
              </div>
           </div>
         );
