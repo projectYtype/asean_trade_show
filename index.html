@@ -265,10 +265,17 @@
     };
 
     const LoginView = ({ setSessionRole, setSessionData, showAlert, data }) => {
-      const [loginId, setLoginId] = useState('');
-      const [password, setPassword] = useState('');
+  // 1. URL에서 파라미터를 읽어옵니다.
+  const urlParams = new URLSearchParams(window.location.search);
+  const passedId = urlParams.get('id') || '';
+  const passedPw = urlParams.get('pw') || '';
 
-      const handleLogin = (e) => {
+  // 2. 읽어온 값을 초기 상태(State)로 설정합니다.
+  const [loginId, setLoginId] = useState(passedId);
+  const [password, setPassword] = useState(passedPw);
+
+  const handleLogin = (e) => {
+// ...
         e.preventDefault();
         if (loginId === 'Bridging' && password === 'bridging1004!!') {
           setSessionRole('admin');
