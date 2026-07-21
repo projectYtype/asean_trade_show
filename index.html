@@ -1235,15 +1235,9 @@
         }
       }, [isOpen, existingRecord]);
 
-      if (!isOpen || !data.meetingSettings) return null;
-
-      const originalSettings = [...data.meetingSettings].reverse();
-
-      const availableDates = Array.from(new Set(originalSettings.map(item => item['미팅 날짜'] || item['날짜']).filter(Boolean)));
-      
       // 사용자 국가에 맞는 컬럼(키)을 찾아 시간 텍스트를 완성하는 헬퍼 함수
       const getLocalizedTimeString = (item, userCountry, role) => {
-        const prefix = item['미팅 시간'] || item['시간'] || ""; // "Morning Session" 등
+        const prefix = item['미팅 시간'] || item['시간'] || ""; 
         let timeDetails = "";
 
         if (role === 'company') {
@@ -1251,16 +1245,12 @@
           timeDetails = item['Korea'] || item['korea'] || "";
         } else {
           // 바이어는 자신의 국가 정보와 일치하는 헤더(열)를 찾음
-          let targetKey = "Korea"; // 기본값
+          let targetKey = "Korea"; 
           
           if (userCountry) {
             const countryLower = userCountry.toLowerCase();
-            // 시트 헤더(키)들 중에서 사용자의 국가명과 일치하는 것을 찾음 (대소문자 무관)
             const matchedKey = Object.keys(item).find(key => 
-                key.toLowerCase() !== '미팅 날짜' && 
-                key.toLowerCase() !== '미팅 시간' && 
-                key.toLowerCase() !== '날짜' && 
-                key.toLowerCase() !== '시간' &&
+                !['미팅 날짜', '미팅 시간', '날짜', '시간'].includes(key.toLowerCase()) && 
                 (countryLower.includes(key.toLowerCase()) || key.toLowerCase().includes(countryLower))
             );
             
@@ -1268,13 +1258,28 @@
                 targetKey = matchedKey;
             }
           }
-          
           timeDetails = item[targetKey] || item['Korea'] || item['korea'] || "";
         }
-
-        // 접두사와 상세 시간을 합쳐서 반환
         return timeDetails ? `${prefix} - ${timeDetails}` : prefix;
       };
+
+      if (!isOpen || !data.meetingSettings) return null;
+
+      const originalSettings = [...data.meetingSettings].reverse();
+
+      // 1. 모든 '고유 날짜'를 모읍니다 (A열)
+      const availableDates = Array.from(new Set(originalSettings.map(item => item['미팅 날짜'] || item['날짜']).filter(Boolean)));
+      
+      // 2. 모든 '고유 시간대'를 모읍니다 (B, C, D...열의 패턴)
+      const timeTemplates = [];
+      const seenTimes = new Set();
+      originalSettings.forEach(item => {
+          const timeName = item['미팅 시간'] || item['시간'];
+          if (timeName && !seenTimes.has(timeName)) {
+              seenTimes.add(timeName);
+              timeTemplates.push(item);
+          }
+      });
 
       const toggleSlot = (slot) => {
         if (selectedSlots.includes(slot)) setSelectedSlots(selectedSlots.filter(s => s !== slot));
@@ -1320,45 +1325,42 @@
             </div>
             
             <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-8">
-              {availableDates.length === 0 ? (
+              {availableDates.length === 0 || timeTemplates.length === 0 ? (
                 <p className="text-gray-500 text-center py-10 font-bold">현재 설정된 미팅 일정이 없습니다.</p>
               ) : (
-                availableDates.map((date) => {
-                  // 해당 날짜에 속하는 항목들만 필터링
-                  const itemsForDate = originalSettings.filter(item => (item['미팅 날짜'] || item['날짜']) === date);
-                  
-                  return (
-                    <div key={date} className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
-                      <h4 className="font-extrabold text-xl text-gray-900 mb-4 flex items-center border-b border-gray-200 pb-3">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2.5"></span> {date}
-                      </h4>
-                      <div className="flex flex-col gap-3">
-                        {itemsForDate.map((item, idx) => {
-                          const timeString = getLocalizedTimeString(item, sessionData.country, sessionRole);
-                          const slot = `[${date}] ${timeString}`;
-                          const isSelected = selectedSlots.includes(slot);
-                          
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => toggleSlot(slot)}
-                              className={`text-left px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl text-sm sm:text-base font-bold transition-all duration-200 border-2 flex items-start sm:items-center ${
-                                isSelected 
-                                  ? 'bg-blue-600 text-white border-blue-600 shadow-md transform -translate-y-0.5' 
-                                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                              }`}
-                            >
-                              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 mr-3 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 ${isSelected ? 'border-white bg-blue-500' : 'border-gray-300 bg-white'}`}>
-                                {isSelected && <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
-                              </div>
-                              <span className="leading-relaxed">{timeString}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                // 날짜별로 모든 시간대(모닝, 애프터눈 등)를 뿌려줍니다.
+                availableDates.map((date) => (
+                  <div key={date} className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <h4 className="font-extrabold text-xl text-gray-900 mb-4 flex items-center border-b border-gray-200 pb-3">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2.5"></span> {date}
+                    </h4>
+                    <div className="flex flex-col gap-3">
+                      {timeTemplates.map((timeItem, idx) => {
+                        // 시간대 객체와 유저 국가를 조합해 최종 텍스트 완성
+                        const timeString = getLocalizedTimeString(timeItem, sessionData.country, sessionRole);
+                        const slot = `[${date}] ${timeString}`;
+                        const isSelected = selectedSlots.includes(slot);
+                        
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => toggleSlot(slot)}
+                            className={`text-left px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl text-sm sm:text-base font-bold transition-all duration-200 border-2 flex items-start sm:items-center ${
+                              isSelected 
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-md transform -translate-y-0.5' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 mr-3 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 ${isSelected ? 'border-white bg-blue-500' : 'border-gray-300 bg-white'}`}>
+                              {isSelected && <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
+                            </div>
+                            <span className="leading-relaxed">{timeString}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                  );
-                })
+                  </div>
+                ))
               )}
             </div>
 
@@ -1370,7 +1372,6 @@
         </div>
       );
     };
-    
     const Layout = ({ sessionRole, setSessionRole, setSessionData, onOpenSchedule, children }) => (
       <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans selection:bg-[#FDB827] selection:text-black">
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/90">
