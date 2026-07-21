@@ -148,6 +148,28 @@
       );
     };
 
+    // 추가된 컴포넌트: 여러 웹사이트 주소가 쉼표로 들어왔을 때 개별 링크로 만들어줍니다.
+    const WebsiteLinks = ({ websites, className = "font-bold text-blue-600 hover:underline break-all" }) => {
+      if (!websites) return <span>-</span>;
+      
+      // 쉼표로 분리 후 앞뒤 공백 제거 및 빈 값 필터링
+      const links = websites.split(',').map(s => s.trim()).filter(Boolean);
+      if (links.length === 0) return <span>-</span>;
+      
+      return (
+        <div className="flex flex-col gap-1.5">
+          {links.map((link, idx) => {
+             const href = link.startsWith('http') ? link : `https://${link}`;
+             return (
+               <a key={idx} href={href} target="_blank" rel="noreferrer" className={className}>
+                 {link}
+               </a>
+             );
+          })}
+        </div>
+      );
+    };
+
     const initialData = {
       companies: [],
       buyers: [],
@@ -509,7 +531,7 @@
                   <Input label="브랜드명 (brandEn, 필수)" value={newComp.brandEn} onChange={e => setNewComp({...newComp, brandEn: e.target.value})} required />
                   <Input label="국가 (country)" value={newComp.country} onChange={e => setNewComp({...newComp, country: e.target.value})} />
                   <Input label="비즈니스 분야 (businessArea)" value={newComp.businessArea} onChange={e => setNewComp({...newComp, businessArea: e.target.value})} />
-                  <Input label="웹사이트 (website)" value={newComp.website} onChange={e => setNewComp({...newComp, website: e.target.value})} />
+                  <Input label="웹사이트 (website, 쉼표로 다중 입력 가능)" value={newComp.website} onChange={e => setNewComp({...newComp, website: e.target.value})} placeholder="example.com, example2.com" />
                   <Input label="로고 URL (logoUrl)" value={newComp.logoUrl} onChange={e => setNewComp({...newComp, logoUrl: e.target.value})} />
                 </div>
               </div>
@@ -578,7 +600,7 @@
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input label="회사명 (companyName, 필수)" value={newBuyer.companyName} onChange={e => setNewBuyer({...newBuyer, companyName: e.target.value})} required />
                   <Input label="국가 (country)" value={newBuyer.country} onChange={e => setNewBuyer({...newBuyer, country: e.target.value})} />
-                  <Input label="웹사이트 (website)" value={newBuyer.website} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} />
+                  <Input label="웹사이트 (website, 쉼표로 다중 입력 가능)" value={newBuyer.website} onChange={e => setNewBuyer({...newBuyer, website: e.target.value})} placeholder="example.com, example2.com" />
                   <Input label="직원 수 (employees)" value={newBuyer.employees} onChange={e => setNewBuyer({...newBuyer, employees: e.target.value})} />
                   <Input label="설립 연도 (establishedYear)" value={newBuyer.establishedYear} onChange={e => setNewBuyer({...newBuyer, establishedYear: e.target.value})} />
                   <Input label="연 매출 (annualRevenue)" value={newBuyer.annualRevenue} onChange={e => setNewBuyer({...newBuyer, annualRevenue: e.target.value})} />
@@ -615,7 +637,7 @@
                 <DetailRow label="브랜드명 (brandEn)" value={viewingCompany.brandEn} />
                 <DetailRow label="국가 (country)" value={viewingCompany.country} />
                 <DetailRow label="비즈니스 분야" value={viewingCompany.businessArea} />
-                <DetailRow label="웹사이트" value={viewingCompany.website} />
+                <DetailRow label="웹사이트" value={viewingCompany.website ? <WebsiteLinks websites={viewingCompany.website} className="text-blue-600 font-bold hover:underline" /> : "-"} />
                 <DetailRow label="담당자명" value={viewingCompany.contactName} />
                 <DetailRow label="담당자 연락처" value={viewingCompany.contactPhone} />
                 <DetailRow label="담당자 이메일" value={viewingCompany.contactEmail} />
@@ -648,7 +670,7 @@
                 <DetailRow label="비즈니스 유형" value={viewingBuyer.businessType} />
                 <DetailRow label="관심 카테고리" value={viewingBuyer.targetCategories} />
                 <DetailRow label="미팅 가능 시간" value={viewingBuyer.timeSlots} />
-                <DetailRow label="웹사이트" value={viewingBuyer.website} />
+                <DetailRow label="웹사이트" value={viewingBuyer.website ? <WebsiteLinks websites={viewingBuyer.website} className="text-blue-600 font-bold hover:underline" /> : "-"} />
                 <DetailRow label="상세 주소" value={viewingBuyer.address} />
                 <DetailRow label="회사 소개" value={viewingBuyer.companyIntro} />
                 <DetailRow label="한국 기업 거래 이력" value={viewingBuyer.history} />
@@ -889,7 +911,7 @@
                         </div>
                         <div className="col-span-2">
                            <p className="font-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1.5">웹사이트</p>
-                           <a href={viewBuyer.website ? (viewBuyer.website.startsWith('http') ? viewBuyer.website : `https://${viewBuyer.website}`) : '#'} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-base break-all">{viewBuyer.website || "-"}</a>
+                           <WebsiteLinks websites={viewBuyer.website} className="font-bold text-blue-600 hover:underline text-base break-all" />
                         </div>
                         
                         <div className="col-span-2 md:col-span-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
@@ -1079,7 +1101,7 @@
                    </div>
                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                       <p className="font-bold text-[10px] text-gray-500 uppercase tracking-wider mb-1">Website</p>
-                      <a href={selectedCompany.website ? (selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`) : '#'} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline text-sm break-all">{selectedCompany.website || "-"}</a>
+                      <WebsiteLinks websites={selectedCompany.website} className="font-bold text-blue-600 hover:underline text-sm break-all" />
                    </div>
                 </div>
 
