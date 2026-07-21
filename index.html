@@ -793,23 +793,14 @@
                           </div>
 
                           <div className="p-5 sm:p-6 flex-grow">
-                            {/* --- 추가 및 수정된 부분: 국가명 (좌측) 및 국기 이모지 (우측) --- */}
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs font-black text-blue-600 uppercase tracking-widest">{b.country || '미입력'}</span>
-                              <span className="text-2xl drop-shadow-sm">
-                                {b.country?.toLowerCase().includes('indonesia') ? '🇮🇩' : 
-                                 b.country?.toLowerCase().includes('singapore') ? '🇸🇬' : ''}
-                              </span>
-                            </div>
-                            
                             <div className="flex justify-between items-start mb-4">
-                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors pr-2">{b.companyName}</h3>
-                              {myMtg && <div className="ml-3 flex-shrink-0 mt-0.5"><Badge status={myMtg.status} /></div>}
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
+                              {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
                             </div>
                             <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
                             <div className="text-sm text-gray-600 space-y-1">
                               <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
-                              {/* 하단에 있던 "국가:" 표시 줄은 삭제되었습니다 */}
+                              <p><span className="font-semibold text-gray-900">국가:</span> {b.country || '미입력'}</p>
                             </div>
                           </div>
                           
