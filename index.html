@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title> ASEAN Korea Beauty Trade Show Portal</title>
@@ -57,27 +56,6 @@
     .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
     .animate-zoom-in { animation: zoomIn 0.2s ease-out forwards; }
   </style>
-  <script>
-  // 페이지가 로드되면 실행
-  document.addEventListener("DOMContentLoaded", function() {
-    // URL에서 파라미터(?id=...&pw=...)를 가져옵니다.
-    const urlParams = new URLSearchParams(window.location.search);
-    const passedId = urlParams.get('id');
-    const passedPw = urlParams.get('pw');
-
-    // ID 값이 있으면 아이디 입력칸에 채워 넣기
-    if (passedId) {
-      // 'login-id-input' 부분을 실제 웹사이트의 아이디 <input> 태그 id 값으로 변경하세요.
-      document.getElementById('login-id-input').value = passedId; 
-    }
-    
-    // PW 값이 있으면 비밀번호 입력칸에 채워 넣기
-    if (passedPw) {
-      // 'login-pw-input' 부분을 실제 웹사이트의 비밀번호 <input> 태그 id 값으로 변경하세요.
-      document.getElementById('login-pw-input').value = passedPw;
-    }
-  });
-</script>
 </head>
 <body>
   <div id="root"></div>
@@ -170,11 +148,8 @@
       );
     };
 
-    // 추가된 컴포넌트: 여러 웹사이트 주소가 쉼표로 들어왔을 때 개별 링크로 만들어줍니다.
     const WebsiteLinks = ({ websites, className = "font-bold text-blue-600 hover:underline break-all" }) => {
       if (!websites) return <span>-</span>;
-      
-      // 쉼표로 분리 후 앞뒤 공백 제거 및 빈 값 필터링
       const links = websites.split(',').map(s => s.trim()).filter(Boolean);
       if (links.length === 0) return <span>-</span>;
       
@@ -195,7 +170,9 @@
     const initialData = {
       companies: [],
       buyers: [],
-      meetings: []
+      meetings: [],
+      meetingSettings: [],
+      meetingSchedules: []
     };
 
     const getDriveId = (url) => {
@@ -208,7 +185,6 @@
 
     const DriveImage = ({ url, alt, className, fallbackText = "No Image" }) => {
         const driveId = getDriveId(url);
-
         const primarySrc = React.useMemo(() => {
             if(!url) return null;
             if(url.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i)) return url;
@@ -265,17 +241,14 @@
     };
 
     const LoginView = ({ setSessionRole, setSessionData, showAlert, data }) => {
-  // 1. URL에서 파라미터를 읽어옵니다.
-  const urlParams = new URLSearchParams(window.location.search);
-  const passedId = urlParams.get('id') || '';
-  const passedPw = urlParams.get('pw') || '';
+      const urlParams = new URLSearchParams(window.location.search);
+      const passedId = urlParams.get('id') || '';
+      const passedPw = urlParams.get('pw') || '';
 
-  // 2. 읽어온 값을 초기 상태(State)로 설정합니다.
-  const [loginId, setLoginId] = useState(passedId);
-  const [password, setPassword] = useState(passedPw);
+      const [loginId, setLoginId] = useState(passedId);
+      const [password, setPassword] = useState(passedPw);
 
-  const handleLogin = (e) => {
-// ...
+      const handleLogin = (e) => {
         e.preventDefault();
         if (loginId === 'Bridging' && password === 'bridging1004!!') {
           setSessionRole('admin');
@@ -356,7 +329,6 @@
                 </div>
               </Card>
 
-              {/* Developer Reset Data Button */}
               <div className="mt-8 text-center">
                  <button onClick={handleDevReset} className="text-xs font-bold text-gray-400 hover:text-red-500 underline decoration-gray-300 underline-offset-4">⚙️ 데이터 강제 초기화 (오류 발생 시 클릭)</button>
               </div>
@@ -1311,7 +1283,120 @@
       );
     };
 
-    const Layout = ({ sessionRole, setSessionRole, setSessionData, children }) => (
+    const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
+      const [selectedSlots, setSelectedSlots] = useState([]);
+
+      // 기존 기록이 있으면 모달을 열 때 해당 슬롯을 미리 체크해둡니다.
+      useEffect(() => {
+        if (isOpen) {
+          if (existingRecord && existingRecord['선택한 미팅 시간']) {
+            setSelectedSlots(existingRecord['선택한 미팅 시간'].split(',').map(s => s.trim()).filter(Boolean));
+          } else {
+            setSelectedSlots([]);
+          }
+        }
+      }, [isOpen, existingRecord]);
+
+      if (!isOpen || !data.meetingSettings) return null;
+
+      // 시트에서 가져온 데이터를 날짜별로 그룹화합니다.
+      const groupedSettings = data.meetingSettings.reduce((acc, curr) => {
+        const date = curr['미팅 날짜'] || curr['날짜'];
+        const time = curr['미팅 시간'] || curr['시간'];
+        if (!date || !time) return acc;
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(time);
+        return acc;
+      }, {});
+
+      const toggleSlot = (slot) => {
+        if (selectedSlots.includes(slot)) setSelectedSlots(selectedSlots.filter(s => s !== slot));
+        else setSelectedSlots([...selectedSlots, slot]);
+      };
+
+      const handleSubmit = () => {
+        if (selectedSlots.length === 0) {
+          showAlert("최소 1개 이상의 시간을 선택해주세요.");
+          return;
+        }
+
+        // 구글 시트에 저장될 데이터 형식 (기존 아이디가 있으면 유지, 없으면 새로 생성)
+        const newSchedule = {
+          id: existingRecord ? existingRecord.id : 'sch_' + Date.now(),
+          '로그인 ID': sessionData.loginId,
+          '구분': sessionRole === 'company' ? '참가기업' : '바이어',
+          '이름/회사명': sessionData.companyName || sessionData.brandEn || sessionData.nameEn,
+          '선택한 미팅 시간': selectedSlots.join(', '),
+          '제출 일시': new Date().toLocaleString()
+        };
+
+        // 데이터 업데이트 (기존 기록이 있으면 갈아끼우고, 없으면 맨 앞에 추가)
+        handleSetData(prev => {
+          const schedules = prev.meetingSchedules || [];
+          if (existingRecord) {
+            return { ...prev, meetingSchedules: schedules.map(s => s.id === newSchedule.id ? newSchedule : s) };
+          } else {
+            return { ...prev, meetingSchedules: [newSchedule, ...schedules] };
+          }
+        });
+        
+        showAlert(existingRecord ? "일정이 성공적으로 수정되었습니다!" : "온라인 미팅 가능 일정이 저장되었습니다!");
+        onClose();
+      };
+
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
+            <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
+              <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
+                <span className="mr-3 text-3xl">🗓️</span> 온라인 미팅 가능 일자 선택
+              </h3>
+              <p className="text-gray-600 mt-2 font-medium">원활한 미팅 매칭을 위해 참여 가능하신 일자와 시간을 모두 선택해 주세요.</p>
+            </div>
+            
+            <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-6">
+              {Object.keys(groupedSettings).length === 0 ? (
+                <p className="text-gray-500 text-center py-10 font-bold">현재 설정된 미팅 일정이 없습니다.</p>
+              ) : (
+                Object.entries(groupedSettings).map(([date, times]) => (
+                  <div key={date} className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <h4 className="font-extrabold text-lg text-gray-800 mb-3 flex items-center">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> {date}
+                    </h4>
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
+                      {times.map(time => {
+                        const slot = `${date} ${time}`;
+                        const isSelected = selectedSlots.includes(slot);
+                        return (
+                          <button
+                            key={time}
+                            onClick={() => toggleSlot(slot)}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${
+                              isSelected 
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-md transform -translate-y-0.5' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+              <Button onClick={onClose} variant="ghost">닫기 / 다음에 하기</Button>
+              <Button onClick={handleSubmit} className="px-8 shadow-md">✅ {existingRecord ? "일정 수정하기" : "일정 제출하기"}</Button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    const Layout = ({ sessionRole, setSessionRole, setSessionData, onOpenSchedule, children }) => (
       <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans selection:bg-[#FDB827] selection:text-black">
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/90">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1320,13 +1405,19 @@
                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#FDB827] rounded-lg sm:rounded-xl flex items-center justify-center font-black text-gray-900 shadow-md flex-shrink-0 text-sm sm:text-base">A</div>
                  <span className="text-lg sm:text-2xl font-extrabold tracking-tight text-gray-900 truncate max-w-[160px] sm:max-w-none">ASEAN Korea Beauty Trade Show</span>
               </div>
-              <div className="flex items-center space-x-2 sm:space-x-6">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                 {/* 일정 확인/수정 버튼 추가 */}
+                 {(sessionRole === 'company' || sessionRole === 'buyer') && (
+                   <Button onClick={onOpenSchedule} variant="outline" className="hidden sm:inline-flex text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">
+                     🗓️ 나의 일정 관리
+                   </Button>
+                 )}
                  {sessionRole === 'guest' && (
                    <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-bold bg-[#FDB827] text-gray-900 rounded-lg hover:bg-amber-400 hover:shadow-md transition-all">
                       SIGN UP NOW
                    </a>
                  )}
-                 <span className="hidden sm:inline-block text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 uppercase tracking-widest border border-gray-200">
+                 <span className="hidden lg:inline-block text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 uppercase tracking-widest border border-gray-200">
                    {sessionRole === 'company' ? '기업 계정' : `Role: ${sessionRole}`}
                  </span>
                  <Button variant="ghost" onClick={() => { setSessionRole(null); setSessionData(null); }} className="text-xs sm:text-sm border border-gray-200 bg-white px-3 py-1.5 sm:px-5 sm:py-2.5">
@@ -1376,7 +1467,7 @@
       const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDK5sINH_5FS8iqmecDQPKk44pfms62mTEdKDKnnqjVsx_ZVAGqxY-l6YRcBFzjstZ9A/exec"; 
 
       const normalizeSheetData = (rawData) => {
-        const result = { companies: [], buyers: [], meetings: [] };
+        const result = { companies: [], buyers: [], meetings: [], meetingSettings: [], meetingSchedules: [] };
         if (!rawData) return result;
         
         Object.keys(rawData).forEach(key => {
@@ -1387,11 +1478,18 @@
             result.buyers = rawData[key];
           } else if (['meetings', 'meeting', '미팅', '예약'].includes(lowerKey)) {
             result.meetings = rawData[key];
+          } 
+          else if (['meetingsettings', '온라인미팅 설정', '온라인미팅설정'].includes(lowerKey)) {
+            result.meetingSettings = rawData[key];
+          } else if (['meetingschedules', '온라인미팅 일정', '온라인미팅일정'].includes(lowerKey)) {
+            result.meetingSchedules = rawData[key];
           }
         });
         
         if (result.companies.length === 0 && rawData.companies) result.companies = rawData.companies;
         if (result.buyers.length === 0 && rawData.buyers) result.buyers = rawData.buyers;
+        if (result.meetingSettings.length === 0 && rawData.meetingSettings) result.meetingSettings = rawData.meetingSettings;
+        if (result.meetingSchedules.length === 0 && rawData.meetingSchedules) result.meetingSchedules = rawData.meetingSchedules;
         
         return result;
       };
@@ -1443,6 +1541,22 @@
       const showConfirm = (msg, callback) => { setConfirmMsg(msg); setOnConfirm(() => callback); };
       const handleConfirmExecute = () => { if (onConfirm) onConfirm(); setConfirmMsg(''); setOnConfirm(null); };
 
+      // 이미 제출된 기록이 있는지 찾습니다.
+      const userScheduleRecord = useMemo(() => {
+        if (!sessionData || !data.meetingSchedules) return null;
+        return data.meetingSchedules.find(s => String(s['로그인 ID']) === String(sessionData.loginId));
+      }, [sessionData, data.meetingSchedules]);
+
+      const hasSubmittedSchedule = !!userScheduleRecord;
+      const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+      // 로딩 끝난 직후, 처음 로그인인데 안 냈다면 팝업 띄우기
+      useEffect(() => {
+        if ((sessionRole === 'company' || sessionRole === 'buyer') && !isLoading && !hasSubmittedSchedule) {
+          setShowScheduleModal(true);
+        }
+      }, [sessionRole, isLoading, hasSubmittedSchedule]);
+      
       if (isLoading) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden px-4">
@@ -1460,12 +1574,25 @@
           {!sessionRole ? (
             <LoginView setSessionRole={setSessionRole} setSessionData={setSessionData} showAlert={showAlert} data={data} />
           ) : (
-            <Layout sessionRole={sessionRole} setSessionRole={setSessionRole} setSessionData={setSessionData}>
+            <Layout sessionRole={sessionRole} setSessionRole={setSessionRole} setSessionData={setSessionData} onOpenSchedule={() => setShowScheduleModal(true)}>
               {sessionRole === 'admin' && <AdminDashboard data={data} setData={handleSetData} showAlert={showAlert} showConfirm={showConfirm} />}
               {sessionRole === 'company' && <CompanyDashboard sessionData={sessionData} data={data} setData={handleSetData} showAlert={showAlert} showConfirm={showConfirm} />}
               {sessionRole === 'buyer' && <BuyerDashboard sessionData={sessionData} data={data} setData={handleSetData} showAlert={showAlert} showConfirm={showConfirm} />}
               {sessionRole === 'guest' && <GuestDashboard data={data} />}
             </Layout>
+          )}
+
+          {sessionData && data.meetingSettings && (
+             <ScheduleModal
+               isOpen={showScheduleModal}
+               onClose={() => setShowScheduleModal(false)}
+               data={data}
+               sessionData={sessionData}
+               sessionRole={sessionRole}
+               handleSetData={handleSetData}
+               showAlert={showAlert}
+               existingRecord={userScheduleRecord} /* 이미 제출한 기록 넘겨주기 */
+             />
           )}
           
           <Modal isOpen={!!alertMsg} onClose={() => setAlertMsg('')} title="알림 (Notification)">
