@@ -1290,7 +1290,8 @@
       useEffect(() => {
         if (isOpen) {
           if (existingRecord && existingRecord['선택한 미팅 시간']) {
-            setSelectedSlots(existingRecord['선택한 미팅 시간'].split(',').map(s => s.trim()).filter(Boolean));
+            // 시간 텍스트 내부에 쉼표가 있을 수 있으므로 구분자를 ' || '로 사용합니다.
+            setSelectedSlots(existingRecord['선택한 미팅 시간'].split(' || ').map(s => s.trim()).filter(Boolean));
           } else {
             setSelectedSlots([]);
           }
@@ -1299,15 +1300,9 @@
 
       if (!isOpen || !data.meetingSettings) return null;
 
-      // 시트에서 가져온 데이터를 날짜별로 그룹화합니다.
-      const groupedSettings = data.meetingSettings.reduce((acc, curr) => {
-        const date = curr['미팅 날짜'] || curr['날짜'];
-        const time = curr['미팅 시간'] || curr['시간'];
-        if (!date || !time) return acc;
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(time);
-        return acc;
-      }, {});
+      // [수정된 부분] 같은 행으로 묶지 않고, A열(날짜)과 B열(시간)의 목록을 독립적으로 모두 추출합니다.
+      const availableDates = Array.from(new Set(data.meetingSettings.map(item => item['미팅 날짜'] || item['날짜']).filter(Boolean)));
+      const availableTimes = Array.from(new Set(data.meetingSettings.map(item => item['미팅 시간'] || item['시간']).filter(Boolean)));
 
       const toggleSlot = (slot) => {
         if (selectedSlots.includes(slot)) setSelectedSlots(selectedSlots.filter(s => s !== slot));
@@ -1320,17 +1315,15 @@
           return;
         }
 
-        // 구글 시트에 저장될 데이터 형식 (기존 아이디가 있으면 유지, 없으면 새로 생성)
         const newSchedule = {
           id: existingRecord ? existingRecord.id : 'sch_' + Date.now(),
           '로그인 ID': sessionData.loginId,
           '구분': sessionRole === 'company' ? '참가기업' : '바이어',
           '이름/회사명': sessionData.companyName || sessionData.brandEn || sessionData.nameEn,
-          '선택한 미팅 시간': selectedSlots.join(', '),
+          '선택한 미팅 시간': selectedSlots.join(' || '), // 쉼표 대신 명확한 구분자 || 사용
           '제출 일시': new Date().toLocaleString()
         };
 
-        // 데이터 업데이트 (기존 기록이 있으면 갈아끼우고, 없으면 맨 앞에 추가)
         handleSetData(prev => {
           const schedules = prev.meetingSchedules || [];
           if (existingRecord) {
@@ -1346,38 +1339,42 @@
 
       return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
             <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
                 <span className="mr-3 text-3xl">🗓️</span> 온라인 미팅 가능 일자 선택
               </h3>
-              <p className="text-gray-600 mt-2 font-medium">원활한 미팅 매칭을 위해 참여 가능하신 일자와 시간을 모두 선택해 주세요.</p>
+              <p className="text-gray-600 mt-2 font-medium">원활한 미팅 매칭을 위해 참여 가능하신 일자와 시간을 모두 선택해 주세요. (다중 선택 가능)</p>
             </div>
             
-            <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-6">
-              {Object.keys(groupedSettings).length === 0 ? (
+            <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-8">
+              {availableDates.length === 0 || availableTimes.length === 0 ? (
                 <p className="text-gray-500 text-center py-10 font-bold">현재 설정된 미팅 일정이 없습니다.</p>
               ) : (
-                Object.entries(groupedSettings).map(([date, times]) => (
-                  <div key={date} className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <h4 className="font-extrabold text-lg text-gray-800 mb-3 flex items-center">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> {date}
+                availableDates.map((date) => (
+                  <div key={date} className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <h4 className="font-extrabold text-xl text-gray-900 mb-4 flex items-center border-b border-gray-200 pb-3">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2.5"></span> {date}
                     </h4>
-                    <div className="flex flex-wrap gap-2 sm:gap-3">
-                      {times.map(time => {
-                        const slot = `${date} ${time}`;
+                    <div className="flex flex-col gap-3">
+                      {availableTimes.map((time, idx) => {
+                        // 날짜와 시간을 결합한 고유 슬롯값 (예: "[8/6(THU)] Morning Session...")
+                        const slot = `[${date}] ${time}`;
                         const isSelected = selectedSlots.includes(slot);
                         return (
                           <button
-                            key={time}
+                            key={idx}
                             onClick={() => toggleSlot(slot)}
-                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${
+                            className={`text-left px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl text-sm sm:text-base font-bold transition-all duration-200 border-2 flex items-start sm:items-center ${
                               isSelected 
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-md transform -translate-y-0.5' 
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                             }`}
                           >
-                            {time}
+                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 mr-3 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 ${isSelected ? 'border-white bg-blue-500' : 'border-gray-300 bg-white'}`}>
+                              {isSelected && <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
+                            </div>
+                            <span className="leading-relaxed">{time}</span>
                           </button>
                         );
                       })}
