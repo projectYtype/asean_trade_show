@@ -340,7 +340,8 @@
     };
 
     const AdminDashboard = ({ data, setData, showAlert, showConfirm }) => {
-      const { companies = [], buyers = [], meetings = [] } = data || {};
+      // 1. meetingSchedules 데이터 추출 추가
+      const { companies = [], buyers = [], meetings = [], meetingSchedules = [] } = data || {};
       const [activeTab, setActiveTab] = useState('companies');
 
       const [viewingCompany, setViewingCompany] = useState(null);
@@ -394,11 +395,16 @@
       const deleteCompany = (id) => showConfirm("정말 이 기업을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, companies: prev.companies.filter(c => c.id !== id) })));
       const deleteBuyer = (id) => showConfirm("정말 이 바이어를 삭제하시겠습니까?", () => setData(prev => ({ ...prev, buyers: prev.buyers.filter(b => b.id !== id) })));
       const deleteMeeting = (id) => showConfirm("정말 이 미팅을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, meetings: prev.meetings.filter(m => m.id !== id) })));
+      
+      // 2. 미팅 일정 삭제 함수 추가
+      const deleteSchedule = (id) => showConfirm("정말 이 일정을 삭제하시겠습니까?", () => setData(prev => ({ ...prev, meetingSchedules: prev.meetingSchedules.filter(s => s.id !== id) })));
 
+      // 3. 미팅 일정 탭 추가
       const tabs = [
         { id: 'companies', label: '기업', icon: '🏢' },
         { id: 'buyers', label: '바이어', icon: '👤' },
-        { id: 'meetings', label: '미팅', icon: '🗓️' }
+        { id: 'meetings', label: '미팅', icon: '🗓️' },
+        { id: 'schedules', label: '미팅 일정', icon: '🕒' }
       ];
 
       return (
@@ -418,6 +424,7 @@
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+             {/* 기업 탭 */}
              {activeTab === 'companies' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
@@ -450,7 +457,9 @@
                   </table>
                 </div>
               </div>
-            )}
+             )}
+             
+             {/* 바이어 탭 */}
              {activeTab === 'buyers' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
@@ -484,6 +493,8 @@
                 </div>
               </div>
              )}
+
+             {/* 미팅 탭 */}
              {activeTab === 'meetings' && (
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
@@ -506,6 +517,45 @@
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><Badge status={m.status} /></td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
                             <button onClick={() => deleteMeeting(m.id)} className="text-red-500 font-bold hover:underline">삭제</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+             )}
+
+             {/* 4. [NEW] 미팅 일정 탭 */}
+             {activeTab === 'schedules' && (
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+                  <h2 className="text-lg font-bold text-gray-900">제출된 미팅 일정 ({meetingSchedules.length})</h2>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50/50">
+                      <tr>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">제출자 (아이디)</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">구분</th>
+                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">선택한 시간</th>
+                        <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">액션</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {meetingSchedules.length === 0 && <tr><td colSpan="4" className="px-6 py-8 text-center text-gray-400 font-medium">제출된 일정이 없습니다.</td></tr>}
+                      {meetingSchedules.map(s => (
+                        <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-4 sm:px-6 py-4 text-sm font-bold text-gray-900">
+                            {s['이름/회사명']}<br/>
+                            <span className="text-xs font-medium text-gray-500">ID: {s['로그인 ID']}</span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s['구분']}</td>
+                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap">
+                            {s['선택한 미팅 시간'] ? s['선택한 미팅 시간'].split(' || ').map((time, idx) => <div key={idx}>• {time}</div>) : '-'}
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button onClick={() => deleteSchedule(s.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
                         </tr>
                       ))}
@@ -1502,11 +1552,21 @@
           localStorage.setItem('expo_data', JSON.stringify(newData));
           
           if (APPS_SCRIPT_URL) {
-            fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(newData),
-            }).catch(err => console.error("구글 시트 저장 실패:", err));
+            // [수정된 부분] 전체를 덮어쓰지 않고, '변경된 탭'의 데이터만 골라서 전송합니다.
+            const payload = {};
+            if (prev.companies !== newData.companies) payload.companies = newData.companies;
+            if (prev.buyers !== newData.buyers) payload.buyers = newData.buyers;
+            if (prev.meetings !== newData.meetings) payload.meetings = newData.meetings;
+            if (prev.meetingSchedules !== newData.meetingSchedules) payload.meetingSchedules = newData.meetingSchedules;
+
+            // 변경된 데이터가 있을 때만 구글 시트로 전송
+            if (Object.keys(payload).length > 0) {
+              fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+              }).catch(err => console.error("구글 시트 저장 실패:", err));
+            }
           }
           
           return newData;
