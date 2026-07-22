@@ -843,8 +843,8 @@
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">BUYER</th>
-                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">STATUS</th>
+                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">바이어명</th>
+                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">상태</th>
                       <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">ACTIONS</th>
                     </tr>
                   </thead>
@@ -857,7 +857,7 @@
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
                             <div className="flex flex-col items-start gap-1">
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                                Received
+                                제안 받음
                               </span>
                               <button onClick={() => setSelectedBuyerId(b?.loginId || b?.id)} className="text-left group mt-1">
                                 <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{b?.companyName || `바이어 ID: ${m.buyerId}`}</span>
