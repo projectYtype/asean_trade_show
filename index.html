@@ -268,7 +268,7 @@
           setSessionData(buyer);
           return;
         }
-        showAlert("아이디 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.");
+        showAlert("아이디 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.\n(Invalid ID or Password.)");
       };
 
       const handleDevReset = () => {
@@ -1023,7 +1023,7 @@
             </div>
           </div>
 
-          {/* 📢 Buyer Dashboard 하단 공지사항 영역 추가 */}
+          {/* 📢 Buyer Dashboard 하단 공지사항 영역 유지 (요청에 따라 유지) */}
           <div className="mb-6 sm:mb-8 bg-amber-50 border border-amber-200 p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-bl-full -z-10"></div>
             <h3 className="text-amber-900 font-extrabold text-base sm:text-lg flex items-center mb-1.5">
@@ -1247,9 +1247,9 @@
       const [selectedLanguage, setSelectedLanguage] = useState('English');
 
       const languageOptions = [
-        { code: 'English', label: 'English', subLabel: 'English' },
-        { code: 'Korean', label: 'Korean', subLabel: '한국어' },
-        { code: 'Indonesian', label: 'Indonesian', subLabel: '인도네시아어' }
+        { code: 'English', label: 'English', subLabel: sessionRole === 'buyer' ? 'English' : '한국어' },
+        { code: 'Korean', label: 'Korean', subLabel: sessionRole === 'buyer' ? 'Korean' : '한국어' },
+        { code: 'Indonesian', label: 'Indonesian', subLabel: sessionRole === 'buyer' ? 'Indonesian' : '인도네시아어' }
       ];
 
       useEffect(() => {
@@ -1321,7 +1321,7 @@
 
       const handleSubmit = () => {
         if (selectedSlots.length === 0) {
-          showAlert("최소 1개 이상의 시간을 선택해주세요.");
+          showAlert(sessionRole === 'buyer' ? "Please select at least one time slot." : "최소 1개 이상의 시간을 선택해주세요.");
           return;
         }
 
@@ -1344,12 +1344,9 @@
           }
         });
         
-        // 제출 성공 시 띄우는 알림 텍스트 변경
-        let successMsg = existingRecord ? "Your schedule has been updated successfully!" : "Your online meeting availability has been saved successfully!";
-        
-        if (sessionRole === 'buyer') {
-          successMsg += "\n\n🚨 [Action Required]\nPlease select all Korean companies you wish to meet with. (Minimum of 7 companies)\n\n* If it is not possible to arrange an offline meeting with your selected companies, online meetings may be scheduled according to the availability you previously submitted.";
-        }
+        let successMsg = existingRecord 
+           ? (sessionRole === 'buyer' ? "Your schedule has been updated successfully!" : "일정 및 언어가 성공적으로 수정되었습니다!") 
+           : (sessionRole === 'buyer' ? "Your online meeting availability has been saved successfully!" : "일정 및 언어가 성공적으로 제출되었습니다!");
         
         showAlert(successMsg);
         onClose();
@@ -1360,23 +1357,30 @@
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
             <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
-                <span className="mr-3 text-3xl">🗓️</span> Available Dates for Online Meetings & Interpretation Language Selection
+                <span className="mr-3 text-3xl">🗓️</span> 
+                {sessionRole === 'buyer' ? 'Available Dates & Interpretation Language' : 'Available Dates for Online Meetings & Interpretation Language Selection'}
               </h3>
-              <p className="text-gray-600 mt-2 font-medium">Please select your preferred interpretation language and all available time slots to facilitate smooth meeting matching.</p>
+              <p className="text-gray-600 mt-2 font-medium">
+                {sessionRole === 'buyer' 
+                  ? 'Please select your preferred interpretation language and all available time slots to facilitate smooth meeting matching.' 
+                  : '원활한 미팅 매칭을 위해 희망하는 통역 언어와 온라인 미팅이 가능한 모든 시간대를 선택해주세요.'}
+              </p>
             </div>
             
             <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-6">
               
-              {/* 통역 언어 선택 섹션 (최상단) */}
+              {/* 통역 언어 선택 섹션 */}
               <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/90 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm sm:text-base font-black text-gray-900 flex items-center">
-                    <span className="text-xl mr-2">🗣️</span> Interpretation Language / 희망 통역 언어 <span className="text-red-500 ml-1">*</span>
+                    <span className="text-xl mr-2">🗣️</span> {sessionRole === 'buyer' ? 'Interpretation Language' : 'Interpretation Language / 희망 통역 언어'} <span className="text-red-500 ml-1">*</span>
                   </label>
                   <span className="text-xs bg-amber-200/60 text-amber-900 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Required</span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-600 mb-4 font-medium">
-                  Select your preferred language for interpretation during 1:1 online meetings.
+                  {sessionRole === 'buyer' 
+                    ? 'Select your preferred language for interpretation during 1:1 online meetings.' 
+                    : '1:1 온라인 미팅 시 희망하는 통역 언어를 선택해주세요.'}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {languageOptions.map((lang) => (
@@ -1398,7 +1402,9 @@
               </div>
 
               {availableDates.length === 0 || timeTemplates.length === 0 ? (
-                <p className="text-gray-500 text-center py-10 font-bold">현재 설정된 미팅 일정이 없습니다.</p>
+                <p className="text-gray-500 text-center py-10 font-bold">
+                  {sessionRole === 'buyer' ? 'No meeting schedules are currently available.' : '현재 설정된 미팅 일정이 없습니다.'}
+                </p>
               ) : (
                 availableDates.map((date) => (
                   <div key={date} className="bg-gray-50 p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
@@ -1435,8 +1441,14 @@
             </div>
 
             <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
-              <Button onClick={onClose} variant="ghost">닫기 / 다음에 하기</Button>
-              <Button onClick={handleSubmit} className="px-8 shadow-md">✅ {existingRecord ? "일정 및 언어 수정하기" : "일정 제출하기"}</Button>
+              <Button onClick={onClose} variant="ghost">
+                {sessionRole === 'buyer' ? 'Close / Do it later' : '닫기 / 다음에 하기'}
+              </Button>
+              <Button onClick={handleSubmit} className="px-8 shadow-md">
+                ✅ {existingRecord 
+                    ? (sessionRole === 'buyer' ? 'Update Schedule & Language' : '일정 및 언어 수정하기') 
+                    : (sessionRole === 'buyer' ? 'Submit Schedule' : '일정 제출하기')}
+              </Button>
             </div>
           </div>
         </div>
@@ -1523,7 +1535,7 @@
               <div className="flex items-center space-x-2 sm:space-x-4">
                  {(sessionRole === 'company' || sessionRole === 'buyer') && (
                    <Button onClick={onOpenSchedule} variant="outline" className="hidden sm:inline-flex text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">
-                      🗓️ 나의 일정 및 통역언어 관리
+                      {sessionRole === 'buyer' ? '🗓️ Manage Schedule & Language' : '🗓️ 나의 일정 및 통역언어 관리'}
                    </Button>
                  )}
                  {sessionRole === 'guest' && (
@@ -1661,13 +1673,25 @@
       }, [sessionData, data.meetingSchedules]);
 
       const hasSubmittedSchedule = !!userScheduleRecord;
+      
+      const [showBuyerNotice, setShowBuyerNotice] = useState(false);
+      const [buyerNoticeClosed, setBuyerNoticeClosed] = useState(false);
       const [showScheduleModal, setShowScheduleModal] = useState(false);
 
       useEffect(() => {
-        if ((sessionRole === 'company' || sessionRole === 'buyer') && !isLoading && !hasSubmittedSchedule) {
-          setShowScheduleModal(true);
+        if (isLoading) return;
+
+        // 1. 바이어 로그인 시 최우선으로 안내 모달 띄우기 (아직 닫지 않았다면)
+        if (sessionRole === 'buyer' && !buyerNoticeClosed) {
+           setShowBuyerNotice(true);
+           return; // 공지사항을 닫기 전까지는 일정 선택창(Schedule Modal)이 뜨지 않도록 대기
         }
-      }, [sessionRole, isLoading, hasSubmittedSchedule]);
+
+        // 2. 바이어가 공지를 닫았거나, 참가기업(Company) 로그인 시 일정을 제출하지 않았다면 일정 선택창 띄우기
+        if ((sessionRole === 'company' || sessionRole === 'buyer') && !hasSubmittedSchedule) {
+           setShowScheduleModal(true);
+        }
+      }, [sessionRole, isLoading, hasSubmittedSchedule, buyerNoticeClosed]);
       
       if (isLoading) {
         return (
@@ -1694,6 +1718,31 @@
             </Layout>
           )}
 
+          {/* 추가된 부분: 바이어 최초 로그인 시 표시되는 공지사항 팝업 */}
+          <Modal 
+             isOpen={showBuyerNotice} 
+             onClose={() => { setShowBuyerNotice(false); setBuyerNoticeClosed(true); }} 
+             title="📢 Action Required"
+          >
+            <div className="flex flex-col items-center justify-center text-center py-4 sm:py-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-5">
+                 <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              </div>
+              <p className="text-gray-900 text-lg sm:text-xl font-extrabold mb-4 leading-tight">
+                Please select all Korean companies<br className="hidden sm:block" /> you wish to meet with.
+              </p>
+              <p className="text-red-500 font-black text-base sm:text-lg mb-6 bg-red-50 px-4 py-1.5 rounded-lg border border-red-100">
+                (Minimum of 7 companies)
+              </p>
+              <p className="text-gray-600 text-sm sm:text-base font-medium mb-8 max-w-md bg-gray-50 p-4 rounded-xl border border-gray-100">
+                * If it is not possible to arrange an offline meeting with your selected companies, online meetings may be scheduled according to the availability you previously submitted.
+              </p>
+              <Button onClick={() => { setShowBuyerNotice(false); setBuyerNoticeClosed(true); }} className="w-full sm:w-auto px-10 py-3 sm:py-4 shadow-xl text-base">
+                Acknowledge & Proceed
+              </Button>
+            </div>
+          </Modal>
+
           {sessionData && data.meetingSettings && (
              <ScheduleModal
                isOpen={showScheduleModal}
@@ -1707,22 +1756,35 @@
              />
           )}
           
-          <Modal isOpen={!!alertMsg} onClose={() => setAlertMsg('')} title="알림 (Notification)">
+          <Modal 
+             isOpen={!!alertMsg} 
+             onClose={() => setAlertMsg('')} 
+             title={sessionRole === 'buyer' ? 'Notification' : '알림 (Notification)'}
+          >
             <div className="flex flex-col items-center justify-center text-center py-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-              {/* 추가된 부분: whitespace-pre-wrap 속성을 추가해 줄바꿈이 정상적으로 반영되도록 수정했습니다. */}
               <p className="text-gray-700 text-base sm:text-lg font-bold mb-6 sm:mb-8 whitespace-pre-wrap">{alertMsg}</p>
-              <Button onClick={() => setAlertMsg('')} className="w-full sm:w-auto px-8">확인 (OK)</Button>
+              <Button onClick={() => setAlertMsg('')} className="w-full sm:w-auto px-8">
+                 {sessionRole === 'buyer' ? 'OK' : '확인 (OK)'}
+              </Button>
             </div>
           </Modal>
           
-          <Modal isOpen={!!confirmMsg} onClose={() => setConfirmMsg('')} title="확인 필요 (Action Required)">
+          <Modal 
+             isOpen={!!confirmMsg} 
+             onClose={() => setConfirmMsg('')} 
+             title={sessionRole === 'buyer' ? 'Action Required' : '확인 필요 (Action Required)'}
+          >
             <div className="flex flex-col items-center justify-center text-center py-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
               <p className="text-gray-700 text-base sm:text-lg font-bold mb-6 sm:mb-8">{confirmMsg}</p>
               <div className="flex flex-col sm:flex-row w-full justify-center gap-3">
-                <Button variant="ghost" onClick={() => setConfirmMsg('')} className="w-full sm:w-auto">취소 (Cancel)</Button>
-                <Button onClick={handleConfirmExecute} variant="danger" className="w-full sm:w-auto">실행 (Confirm)</Button>
+                <Button variant="ghost" onClick={() => setConfirmMsg('')} className="w-full sm:w-auto">
+                   {sessionRole === 'buyer' ? 'Cancel' : '취소 (Cancel)'}
+                </Button>
+                <Button onClick={handleConfirmExecute} variant="danger" className="w-full sm:w-auto">
+                   {sessionRole === 'buyer' ? 'Confirm' : '실행 (Confirm)'}
+                </Button>
               </div>
             </div>
           </Modal>
