@@ -1716,7 +1716,8 @@
            return; 
         }
 
-        if ((sessionRole === 'company' || sessionRole === 'buyer') && !hasSubmittedSchedule) {
+        // 👇 buyer(바이어)일 때만 팝업이 뜨도록 변경
+        if (sessionRole === 'buyer' && !hasSubmittedSchedule) {
            setShowScheduleModal(true);
         }
       }, [sessionRole, isLoading, hasSubmittedSchedule, buyerNoticeClosed]);
