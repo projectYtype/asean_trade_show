@@ -1639,6 +1639,18 @@
         const result = { companies: [], buyers: [], meetings: [], meetingSettings: [], meetingSchedules: [] };
         if (!rawData) return result;
         
+        // ✨ 상태값을 프론트엔드 표준으로 강제 변환하여 UI 오류 완벽 차단
+        const normalizeMeetings = (meetingsList) => {
+            if (!meetingsList) return [];
+            return meetingsList.map(m => {
+                let st = String(m.status || m['진행상태'] || m['상태'] || '').toLowerCase();
+                if (st.includes('pending') || st.includes('requested') || st.includes('대기중')) m.status = 'pending';
+                else if (st.includes('accepted') || st.includes('수락됨')) m.status = 'accepted';
+                else if (st.includes('declined') || st.includes('거절됨')) m.status = 'declined';
+                return m;
+            });
+        };
+
         Object.keys(rawData).forEach(key => {
           const lowerKey = key.toLowerCase().trim();
           if (['companies', 'company', '기업', '참가기업', '브랜드'].includes(lowerKey)) {
@@ -1646,9 +1658,8 @@
           } else if (['buyers', 'buyer', '바이어', '구매자'].includes(lowerKey)) {
             result.buyers = rawData[key];
           } else if (['meetings', 'meeting', '미팅', '예약'].includes(lowerKey)) {
-            result.meetings = rawData[key];
-          } 
-          else if (['meetingsettings', '온라인미팅 설정', '온라인미팅설정'].includes(lowerKey)) {
+            result.meetings = normalizeMeetings(rawData[key]); // ✨ 변환 적용
+          } else if (['meetingsettings', '온라인미팅 설정', '온라인미팅설정'].includes(lowerKey)) {
             result.meetingSettings = rawData[key];
           } else if (['meetingschedules', '온라인미팅 일정', '온라인미팅일정'].includes(lowerKey)) {
             result.meetingSchedules = rawData[key];
@@ -1659,6 +1670,7 @@
         if (result.buyers.length === 0 && rawData.buyers) result.buyers = rawData.buyers;
         if (result.meetingSettings.length === 0 && rawData.meetingSettings) result.meetingSettings = rawData.meetingSettings;
         if (result.meetingSchedules.length === 0 && rawData.meetingSchedules) result.meetingSchedules = rawData.meetingSchedules;
+        if (result.meetings.length === 0 && rawData.meetings) result.meetings = normalizeMeetings(rawData.meetings); // ✨ 변환 적용
         
         return result;
       };
