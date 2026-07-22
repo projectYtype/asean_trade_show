@@ -1030,7 +1030,7 @@
               <span className="text-xl mr-2">📢</span> Action Required: Select Companies
             </h3>
             <p className="text-amber-800 text-sm sm:text-base font-semibold leading-relaxed">
-              Please request meetings with all Korean companies you wish to meet with. <strong className="text-red-500">(Minimum of 7 companies)</strong><br />
+              Please request meetings with the Korean companies you would like to meet.<strong className="text-red-500">(Minimum of 7 companies)</strong><br />
               <span className="text-amber-700/80 text-xs sm:text-sm">* If offline meetings cannot be arranged, online meetings will be scheduled based on your submitted availability.</span>
             </p>
           </div>
@@ -1358,7 +1358,7 @@
             <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
                 <span className="mr-3 text-3xl">🗓️</span> 
-                {sessionRole === 'buyer' ? 'Available Dates & Interpretation Language' : '온라인 미팅 가능 시간 선택'}
+                {sessionRole === 'buyer' ? 'Available Online Meeting Dates & Interpretation Language' : '온라인 미팅 가능 시간 선택'}
               </h3>
               <p className="text-gray-600 mt-2 font-medium">
                 {sessionRole === 'buyer' 
@@ -1729,16 +1729,16 @@
                  <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
               </div>
               <p className="text-gray-900 text-lg sm:text-xl font-extrabold mb-4 leading-tight">
-                Please select all Korean companies<br className="hidden sm:block" /> you wish to meet with.
+                Please select the Korean companies you would like to meet with.
               </p>
               <p className="text-red-500 font-black text-base sm:text-lg mb-6 bg-red-50 px-4 py-1.5 rounded-lg border border-red-100">
-                (Minimum of 7 companies)
+                Minimum of 7 companies
               </p>
-              <p className="text-gray-600 text-sm sm:text-base font-medium mb-8 max-w-md bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-gray-600 text-sm sm:text-base font-medium mb-8 max-w-2xl bg-gray-50 p-4 rounded-xl border border-gray-100">
                 * If it is not possible to arrange an offline meeting with your selected companies, online meetings may be scheduled according to the availability you previously submitted.
               </p>
               <Button onClick={() => { setShowBuyerNotice(false); setBuyerNoticeClosed(true); }} className="w-full sm:w-auto px-10 py-3 sm:py-4 shadow-xl text-base">
-                Acknowledge & Proceed
+                Confirm
               </Button>
             </div>
           </Modal>
