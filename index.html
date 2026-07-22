@@ -118,31 +118,36 @@
       </div>
     );
 
-    const Badge = ({ status, children, isEnglish = false, className = '' }) => {
+    const Badge = ({ status, isIncoming, isEnglish = false, className = '' }) => {
       const styles = {
-        pending: "bg-amber-100 text-amber-800 border-amber-200",
+        pending_outgoing: "bg-amber-100 text-amber-800 border-amber-200",
+        pending_incoming: "bg-blue-100 text-blue-800 border-blue-200",
         accepted: "bg-emerald-100 text-emerald-800 border-emerald-200",
         declined: "bg-rose-100 text-rose-800 border-rose-200",
         default: "bg-gray-100 text-gray-800 border-gray-200"
       };
       
-      let label = children;
-      if (!children) {
-         if (isEnglish) {
-             if (status === 'pending') label = 'REQUESTED';
-             if (status === 'accepted') label = 'ACCEPTED';
-             if (status === 'declined') label = 'DECLINED';
-         } else {
-             if (status === 'pending') label = 'Requested'; 
-             if (status === 'accepted') label = '수락됨';
-             if (status === 'declined') label = '거절됨';
-         }
+      let label = '';
+      let styleKey = status;
+
+      if (status === 'pending') {
+          if (isIncoming) {
+              label = isEnglish ? 'RECEIVED' : '제안 받음';
+              styleKey = 'pending_incoming';
+          } else {
+              label = isEnglish ? 'REQUESTED' : '신청함';
+              styleKey = 'pending_outgoing';
+          }
+      } else if (status === 'accepted') {
+          label = isEnglish ? 'ACCEPTED' : '수락됨';
+      } else if (status === 'declined') {
+          label = isEnglish ? 'DECLINED' : '거절됨';
+      } else {
+          label = status.toUpperCase();
       }
-      
-      if(!label) label = (status || '').toUpperCase();
 
       return (
-        <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide border ${styles[status] || styles.default} ${className}`}>
+        <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide border ${styles[styleKey] || styles.default} ${className}`}>
           {label}
         </span>
       );
@@ -507,7 +512,7 @@
                         <tr key={m.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">{m.requestedBy === 'buyer' ? '바이어' : '기업'}</td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{m.buyerId} &rarr; {m.companyId}</td>
-                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><Badge status={m.status} /></td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap"><Badge status={m.status} isIncoming={false} isEnglish={false} /></td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
                             <button onClick={() => deleteMeeting(m.id)} className="text-red-500 font-bold hover:underline">삭제</button>
                           </td>
@@ -700,7 +705,6 @@
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
       const [selectedCountryFilter, setSelectedCountryFilter] = useState('All');
 
-      // 로그인 ID 기준 매핑
       const allMyRequests = meetings.filter(m => String(m.companyId) === String(sessionData.loginId));
       const pendingIncomingCount = allMyRequests.filter(m => m.status === 'pending' && m.requestedBy === 'buyer').length;
 
@@ -711,7 +715,6 @@
           showAlert("모든 대기 요청이 수락되었습니다.");
       });
 
-      // 바이어에게 미팅 신청 시 로그인 ID 값으로 기록
       const handleRequestMeetingWithBuyer = (buyerLoginId) => {
         setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: buyerLoginId, companyId: sessionData.loginId, status: 'pending', requestedBy: 'company' }] }));
         showAlert("바이어에게 미팅 신청이 전송되었습니다.");
@@ -786,6 +789,8 @@
                     {filteredBuyers.map(b => {
                       const bKey = b.loginId || b.id;
                       const myMtg = meetings.find(m => String(m.companyId) === String(sessionData.loginId) && String(m.buyerId) === String(bKey));
+                      const isIncomingMtg = myMtg && myMtg.requestedBy === 'buyer';
+
                       return (
                         <Card key={bKey} hover onClick={() => setSelectedBuyerId(bKey)} className="flex flex-col overflow-hidden group">
                           
@@ -802,25 +807,32 @@
                           <div className="p-5 sm:p-6 flex-grow">
                             <div className="flex justify-between items-start mb-4">
                               <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{b.companyName}</h3>
-                              {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} /></div>}
+                              {myMtg && <div className="ml-3 flex-shrink-0"><Badge status={myMtg.status} isIncoming={isIncomingMtg} isEnglish={false} /></div>}
                             </div>
                             <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{b.businessType || '비즈니스 유형 미입력'}</p>
                             <div className="text-sm text-gray-600 space-y-2 mt-2">
                               <p className="line-clamp-2"><span className="font-semibold text-gray-900">관심 카테고리:</span> {b.targetCategories || '미입력'}</p>
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-gray-900">국가:</span>
-                                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-md border border-gray-200">{b.country || '미입력'}</span>
+                                <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-md border border-gray-200 ml-1">{b.country || '미입력'}</span>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
+                          <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2 mt-auto text-xs sm:text-sm">
                             {!myMtg ? (
-                              <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(bKey); }} className="w-full relative z-10 shadow-sm">🗓️ 미팅 신청하기</Button>
+                              <Button onClick={(e) => { e.stopPropagation(); handleRequestMeetingWithBuyer(bKey); }} className="w-full relative z-10 shadow-sm text-sm">🗓️ 미팅 신청하기</Button>
                             ) : (
-                              <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
-                                {myMtg.requestedBy === 'company' ? '내가 신청한 미팅입니다.' : '바이어가 신청한 미팅입니다.'}
-                              </div>
+                              myMtg.status === 'pending' && isIncomingMtg ? (
+                                <div className="flex gap-2 w-full relative z-10">
+                                  <Button onClick={(e) => { e.stopPropagation(); handleAccept(myMtg.id); }} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white border-0 ring-0 shadow-sm text-sm">수락</Button>
+                                  <Button onClick={(e) => { e.stopPropagation(); handleDecline(myMtg.id); }} variant="ghost" className="flex-1 bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-sm text-sm">거절</Button>
+                                </div>
+                              ) : (
+                                <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg flex items-center justify-center">
+                                  상태: <Badge status={myMtg.status} isIncoming={isIncomingMtg} isEnglish={false} className="ml-1.5" />
+                                </div>
+                              )
                             )}
                           </div>
                         </Card>
@@ -847,12 +859,12 @@
                             <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                <div>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                                       {isIncoming ? '받은 요청' : '보낸 요청'}
                                     </span>
                                   </div>
                                   <p className="font-bold text-lg text-gray-900">{b?.companyName || `바이어 ID: ${m.buyerId}`}</p>
-                                  <div className="mt-2"><Badge status={m.status} /></div>
+                                  <div className="mt-2"><Badge status={m.status} isIncoming={isIncoming} isEnglish={false} /></div>
                                </div>
                                
                                {isIncoming && m.status === 'pending' ? (
@@ -876,7 +888,6 @@
           <Modal isOpen={!!selectedBuyerId} onClose={() => setSelectedBuyerId(null)} title="바이어 상세 프로필">
             {viewBuyer && (
                 <div className="space-y-6 sm:space-y-8 pb-6">
-                  {/* Hero Section */}
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
                      <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-blue-50/50 rounded-bl-full -z-10"></div>
                      <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center p-4 flex-shrink-0 z-10">
@@ -893,7 +904,6 @@
                      </div>
                   </div>
 
-                  {/* 비즈니스 유형 */}
                   <div className="bg-indigo-50/50 border border-indigo-100 p-5 sm:p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                      <h4 className="font-black text-indigo-900 text-lg flex items-center">
                         <span className="text-indigo-500 mr-2 text-xl">🏢</span> 비즈니스 유형
@@ -903,7 +913,6 @@
                      </div>
                   </div>
 
-                  {/* Fact Sheet */}
                   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                      <h4 className="font-black text-gray-900 text-lg mb-6 flex items-center border-b border-gray-100 pb-4">
                         <span className="text-blue-500 mr-2 text-xl">📌</span> 핵심 정보 (At a Glance)
@@ -946,7 +955,6 @@
                      </div>
                   </div>
 
-                  {/* Long Text Sections */}
                   <div className="space-y-6">
                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                         <h4 className="font-black text-gray-900 text-lg mb-4 flex items-center"><span className="text-blue-500 mr-2 text-xl">🏢</span> 회사 소개</h4>
@@ -964,7 +972,6 @@
                     보안 정책에 따라 개인 연락처(이메일, 휴대폰)는 블라인드 처리되었습니다.
                   </div>
 
-                  {/* Meeting Request Action inside Modal */}
                   <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
                       <div className="text-center sm:text-left">
                         <h4 className="font-extrabold text-lg sm:text-xl text-gray-900">이 바이어와 미팅을 원하시나요?</h4>
@@ -974,9 +981,16 @@
                         {!myMtgWithViewBuyer ? (
                            <Button onClick={() => handleRequestMeetingWithBuyer(viewBuyer.loginId || viewBuyer.id)} className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base shadow-xl shadow-amber-200/50">🗓️ 미팅 신청하기</Button>
                         ) : (
-                           <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                              상태: <Badge status={myMtgWithViewBuyer.status} className="ml-2 sm:ml-3" />
-                           </div>
+                           myMtgWithViewBuyer.status === 'pending' && myMtgWithViewBuyer.requestedBy === 'buyer' ? (
+                             <div className="flex gap-2 w-full sm:w-auto">
+                                <Button onClick={() => handleAccept(myMtgWithViewBuyer.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 ring-0 flex-1 sm:flex-none">수락</Button>
+                                <Button onClick={() => handleDecline(myMtgWithViewBuyer.id)} variant="ghost" className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 flex-1 sm:flex-none">거절</Button>
+                             </div>
+                           ) : (
+                             <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
+                               상태: <Badge status={myMtgWithViewBuyer.status} isIncoming={myMtgWithViewBuyer.requestedBy === 'buyer'} isEnglish={false} className="ml-2 sm:ml-3" />
+                             </div>
+                           )
                         )}
                       </div>
                   </div>
@@ -992,11 +1006,9 @@
       const [selectedCompany, setSelectedCompany] = useState(null);
       const [activeSubTab, setActiveSubTab] = useState('directory');
 
-      // 로그인 ID 기준 매핑
       const allMyRequests = meetings.filter(m => String(m.buyerId) === String(sessionData.loginId));
       const pendingIncomingCount = allMyRequests.filter(m => m.status === 'pending' && m.requestedBy === 'company').length;
 
-      // 기업에게 미팅 신청 시 로그인 ID 값으로 기록
       const handleRequestMeeting = (companyLoginId) => { 
         setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: sessionData.loginId, companyId: companyLoginId, status: 'pending', requestedBy: 'buyer' }] })); 
         showAlert("Meeting request sent successfully."); 
@@ -1042,6 +1054,8 @@
               {companies.map(company => {
                 const cKey = company.loginId || company.id;
                 const compMeeting = meetings.find(m => String(m.buyerId) === String(sessionData.loginId) && String(m.companyId) === String(cKey));
+                const isIncomingMtg = compMeeting && compMeeting.requestedBy === 'company';
+
                 return (
                   <Card key={cKey} hover onClick={() => setSelectedCompany(company)} className="flex flex-col overflow-hidden group cursor-pointer">
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
@@ -1049,20 +1063,30 @@
                       <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
                     </div>
                     <div className="p-5 sm:p-6 flex-grow">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">{company.brandEn || company.nameEn}</h3>
-                        {compMeeting && <div className="ml-3 flex-shrink-0"><Badge status={compMeeting.status} isEnglish={true} /></div>}
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{company.brandEn || company.nameEn}</h3>
+                        {compMeeting && <div className="ml-3 flex-shrink-0"><Badge status={compMeeting.status} isIncoming={isIncomingMtg} isEnglish={true} /></div>}
                       </div>
-                      {company.businessArea && <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">{company.businessArea}</p>}
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed mt-3">{company.introEn || 'No introduction provided.'}</p>
+                      {company.businessArea && <p className="text-xs sm:text-sm font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-2.5 py-1 rounded-md border border-gray-100">{company.businessArea}</p>}
+                      <div className="text-sm text-gray-600 space-y-2 mt-2">
+                        <p className="line-clamp-2">{company.introEn || 'No introduction provided.'}</p>
+                      </div>
                     </div>
-                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
+                    
+                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2 mt-auto text-xs sm:text-sm">
                       {!compMeeting ? (
-                        <Button onClick={(e) => { e.stopPropagation(); handleRequestMeeting(cKey); }} className="w-full relative z-10 shadow-sm">🗓️ Request a Meeting</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); handleRequestMeeting(cKey); }} className="w-full relative z-10 shadow-sm text-sm">🗓️ Request a Meeting</Button>
                       ) : (
-                        <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg">
-                          {compMeeting.requestedBy === 'buyer' ? 'Requested by you.' : 'Requested by company.'}
-                        </div>
+                        compMeeting.status === 'pending' && isIncomingMtg ? (
+                          <div className="flex gap-2 w-full relative z-10">
+                            <Button onClick={(e) => { e.stopPropagation(); handleAcceptMtg(compMeeting.id); }} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white border-0 ring-0 shadow-sm text-sm">Accept</Button>
+                            <Button onClick={(e) => { e.stopPropagation(); handleDeclineMtg(compMeeting.id); }} variant="ghost" className="flex-1 bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-sm text-sm">Decline</Button>
+                          </div>
+                        ) : (
+                          <div className="text-center py-2 text-xs font-semibold text-gray-500 bg-gray-200/50 rounded-lg flex items-center justify-center">
+                            Status: <Badge status={compMeeting.status} isIncoming={isIncomingMtg} isEnglish={true} className="ml-1.5" />
+                          </div>
+                        )
                       )}
                     </div>
                   </Card>
@@ -1095,7 +1119,7 @@
                         <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
                             <div className="flex flex-col items-start gap-1">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isIncoming ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                                 {isIncoming ? 'Received' : 'Sent'}
                               </span>
                               <button onClick={() => setSelectedCompany(comp)} className="text-left group mt-1">
@@ -1104,7 +1128,7 @@
                               </button>
                             </div>
                           </td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} isEnglish={true} /></td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} isIncoming={isIncoming} isEnglish={true} /></td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
                             {isIncoming && m.status === 'pending' ? (
                               <>
@@ -1242,7 +1266,7 @@
                            </div>
                          ) : (
                            <div className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-gray-700 border-2 border-gray-100 bg-gray-50 flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
-                             Status: <Badge status={currentMeeting.status} isEnglish={true} className="ml-2 sm:ml-3" />
+                             Status: <Badge status={currentMeeting.status} isIncoming={currentMeeting.requestedBy === 'company'} isEnglish={true} className="ml-2 sm:ml-3" />
                            </div>
                          )
                       )}
@@ -1252,6 +1276,80 @@
             )}
           </Modal>
 
+        </div>
+      );
+    };
+
+    const GuestDashboard = ({ data }) => {
+      const { companies = [] } = data || {};
+      const [selectedCompany, setSelectedCompany] = useState(null);
+
+      return (
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in">
+          <div className="mb-8 text-center bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+             <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">ASEAN Korea Beauty Trade Show</h1>
+             <p className="text-gray-600 font-medium max-w-2xl mx-auto">Explore outstanding K-Beauty brands participating in our trade show. Register as a buyer to request 1:1 business meetings!</p>
+             <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-block mt-4 px-6 py-3 bg-[#FDB827] text-gray-900 font-extrabold rounded-xl shadow-lg hover:bg-amber-400 transition-all">
+                🚀 Register as Buyer Now
+             </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8 animate-slide-up">
+            {companies.map(company => (
+              <Card key={company.loginId || company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col overflow-hidden group cursor-pointer">
+                <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
+                  <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
+                </div>
+                <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">{company.brandEn || company.nameEn}</h3>
+                    {company.businessArea && <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">{company.businessArea}</p>}
+                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed mt-3">{company.introEn || 'No introduction provided.'}</p>
+                  </div>
+                  <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
+                     View Profile
+                     <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Modal isOpen={!!selectedCompany} onClose={() => setSelectedCompany(null)} title="Brand Profile">
+            {selectedCompany && (
+              <div className="space-y-6 sm:space-y-8 pb-4">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-[#FDB827]/10 rounded-bl-full -z-10"></div>
+                   <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
+                      {selectedCompany.logoUrl ? (
+                         <a href={selectedCompany.logoUrl} target="_blank" rel="noreferrer" className="w-full h-full block flex items-center justify-center" title="원본 로고 파일 열기">
+                            <DriveImage url={selectedCompany.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
+                         </a>
+                      ) : <span className="text-gray-300 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center">No Logo</span>}
+                   </div>
+                   <div className="text-center sm:text-left z-10 flex-grow w-full pt-2">
+                      <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{selectedCompany.brandEn}</h2>
+                      <p className="text-sm sm:text-lg text-gray-500 font-medium">{selectedCompany.nameEn}</p>
+                   </div>
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-lg mb-3">| Brand Intro</h4>
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 font-medium whitespace-pre-wrap">{selectedCompany.introEn || "-"}</div>
+                </div>
+
+                <VideoPlayer url={selectedCompany.youtubeUrl} />
+
+                <div className="bg-amber-50 p-6 rounded-2xl text-center border border-amber-200 mt-6">
+                   <p className="font-bold text-gray-800 mb-3">Want to schedule a B2B meeting with {selectedCompany.brandEn}?</p>
+                   <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-block px-6 py-2.5 bg-[#FDB827] text-gray-900 font-bold rounded-xl shadow-md hover:bg-amber-400">
+                      Register as a Buyer
+                   </a>
+                </div>
+              </div>
+            )}
+          </Modal>
         </div>
       );
     };
@@ -1382,7 +1480,6 @@
             </div>
             
             <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-6">
-              
               {/* 통역 언어 선택 섹션 (바이어에게만 표시) */}
               {sessionRole === 'buyer' && (
                 <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/90 shadow-sm">
@@ -1465,74 +1562,6 @@
               </Button>
             </div>
           </div>
-        </div>
-      );
-    };
-
-    const GuestDashboard = ({ data }) => {
-      const { companies = [] } = data || {};
-      const [selectedCompany, setSelectedCompany] = useState(null);
-
-      return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in">
-          <div className="mb-8 text-center bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-             <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">ASEAN Korea Beauty Trade Show</h1>
-             <p className="text-gray-600 font-medium max-w-2xl mx-auto">Explore outstanding K-Beauty brands participating in our trade show. Register as a buyer to request 1:1 business meetings!</p>
-             <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-block mt-4 px-6 py-3 bg-[#FDB827] text-gray-900 font-extrabold rounded-xl shadow-lg hover:bg-amber-400 transition-all">
-                🚀 Register as Buyer Now
-             </a>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8 animate-slide-up">
-            {companies.map(company => (
-              <Card key={company.loginId || company.id} hover onClick={() => setSelectedCompany(company)} className="flex flex-col relative group cursor-pointer border-t-4 border-t-[#FDB827]">
-                <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                  <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
-                </div>
-                <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1 line-clamp-1">{company.brandEn || company.nameEn}</h3>
-                    {company.businessArea && <p className="text-xs sm:text-sm font-medium text-gray-500 mb-2">{company.businessArea}</p>}
-                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed mt-3">{company.introEn || 'No introduction provided.'}</p>
-                  </div>
-                  <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100 text-xs sm:text-sm font-bold text-blue-600 flex items-center justify-between">
-                     View Profile
-                     <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <Modal isOpen={!!selectedCompany} onClose={() => setSelectedCompany(null)} title="Brand Profile">
-            {selectedCompany && (
-              <div className="space-y-6 sm:space-y-8 pb-4">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-                   <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-3 sm:p-4 flex-shrink-0 z-10">
-                      <DriveImage url={selectedCompany.logoUrl} alt="logo" className="object-contain w-full h-full" fallbackText="Logo" />
-                   </div>
-                   <div className="text-center sm:text-left z-10 flex-grow w-full pt-2">
-                      <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mb-1 sm:mb-2 tracking-tight">{selectedCompany.brandEn}</h2>
-                      <p className="text-sm sm:text-lg text-gray-500 font-medium">{selectedCompany.nameEn}</p>
-                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-lg mb-3">| Brand Intro</h4>
-                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm sm:text-base text-gray-700 font-medium whitespace-pre-wrap">{selectedCompany.introEn || "-"}</div>
-                </div>
-
-                <VideoPlayer url={selectedCompany.youtubeUrl} />
-
-                <div className="bg-amber-50 p-6 rounded-2xl text-center border border-amber-200 mt-6">
-                   <p className="font-bold text-gray-800 mb-3">Want to schedule a B2B meeting with {selectedCompany.brandEn}?</p>
-                   <a href="https://forms.gle/4mxgkCsDCQoozqNN8" target="_blank" rel="noreferrer" className="inline-block px-6 py-2.5 bg-[#FDB827] text-gray-900 font-bold rounded-xl shadow-md hover:bg-amber-400">
-                      Register as a Buyer
-                   </a>
-                </div>
-              </div>
-            )}
-          </Modal>
         </div>
       );
     };
@@ -1698,7 +1727,7 @@
         // 1. 바이어 로그인 시 최우선으로 안내 모달 띄우기 (아직 닫지 않았다면)
         if (sessionRole === 'buyer' && !buyerNoticeClosed) {
            setShowBuyerNotice(true);
-           return; // 공지사항을 닫기 전까지는 일정 선택창(Schedule Modal)이 뜨지 않도록 대기
+           return; 
         }
 
         // 2. 바이어가 공지를 닫았거나, 참가기업(Company) 로그인 시 일정을 제출하지 않았다면 일정 선택창 띄우기
@@ -1732,7 +1761,6 @@
             </Layout>
           )}
 
-          {/* 추가된 부분: 바이어 최초 로그인 시 표시되는 공지사항 팝업 */}
           <Modal 
              isOpen={showBuyerNotice} 
              onClose={() => { setShowBuyerNotice(false); setBuyerNoticeClosed(true); }} 
