@@ -788,11 +788,11 @@
                         <Card key={bKey} hover onClick={() => setSelectedBuyerId(bKey)} className="flex flex-col overflow-hidden group">
                           
                           <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                            {myMtg && (
-                               <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${myMtg.requestedBy === 'company' ? 'bg-blue-500' : 'bg-orange-500'}`}>
-                                  {myMtg.requestedBy === 'company' ? '내가 신청한 곳' : '내가 신청받은 곳'}
-                               </div>
-                            )}
+{myMtg && (
+   <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${myMtg.requestedBy === 'company' ? 'bg-orange-500' : 'bg-blue-500'}`}>
+      {myMtg.requestedBy === 'company' ? '내가 신청한 곳' : '내가 신청받은 곳'}
+   </div>
+)}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
                             <DriveImage 
                               url={b.logoUrl} 
@@ -1047,7 +1047,7 @@
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
                       {/* 신청 뱃지 추가 */}
                       {compMeeting && (
-   <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${compMeeting.requestedBy === 'buyer' ? 'bg-blue-500' : 'bg-orange-500'}`}>
+   <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${compMeeting.requestedBy === 'buyer' ? 'bg-orange-500' : 'bg-blue-500'}`}>
       {compMeeting.requestedBy === 'buyer' ? 'Requested' : 'Received'}
    </div>
 )}
