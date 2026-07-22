@@ -836,33 +836,49 @@
           {activeSubTab === 'requests' && (
             <div className="animate-slide-up">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">미팅 요청 내역 (받은 요청)</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">미팅 요청 내역 (Received)</h2>
               </div>
               
-              {incomingRequests.length === 0 ? <p className="text-gray-500">받은 요청 내역이 없습니다.</p> : (
-                  <div className="space-y-4">
-                     {incomingRequests.map(m => {
-                         const b = buyers.find(buyer => String(buyer.loginId || buyer.id) === String(m.buyerId));
-                         return (
-                            <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                               <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                                      받은 요청
-                                    </span>
-                                  </div>
-                                  <p className="font-bold text-lg text-gray-900">{b?.companyName || `바이어 ID: ${m.buyerId}`}</p>
-                                  <div className="mt-2"><Badge status={m.status} isIncoming={true} isEnglish={false} /></div>
-                               </div>
-                               
-                               <div className="text-sm font-bold text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 mt-3 sm:mt-0">
-                                   요청 수신됨
-                               </div>
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">BUYER</th>
+                      <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">STATUS</th>
+                      <th className="px-4 sm:px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {incomingRequests.length === 0 && <tr><td colSpan="3" className="px-6 py-16 text-center text-gray-400 font-medium">받은 미팅 요청이 없습니다.</td></tr>}
+                    {incomingRequests.map(m => {
+                      const b = buyers.find(buyer => String(buyer.loginId || buyer.id) === String(m.buyerId));
+                      return (
+                        <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                                Received
+                              </span>
+                              <button onClick={() => setSelectedBuyerId(b?.loginId || b?.id)} className="text-left group mt-1">
+                                <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{b?.companyName || `바이어 ID: ${m.buyerId}`}</span>
+                                <span className="text-xs sm:text-sm text-gray-500">Review Profile &rarr;</span>
+                              </button>
                             </div>
-                         )
-                     })}
-                  </div>
-              )}
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
+                             <Badge status={m.status} isIncoming={true} isEnglish={true} />
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 sm:py-5 text-right whitespace-nowrap">
+                             <div className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg cursor-default">
+                                Received
+                             </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -1034,10 +1050,10 @@
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
                       {/* 신청 뱃지 추가 */}
                       {compMeeting && (
-                         <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${compMeeting.requestedBy === 'buyer' ? 'bg-blue-500' : 'bg-orange-500'}`}>
-                            {compMeeting.requestedBy === 'buyer' ? '내가 신청한 곳' : '내가 신청받은 곳'}
-                         </div>
-                      )}
+   <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${compMeeting.requestedBy === 'buyer' ? 'bg-blue-500' : 'bg-orange-500'}`}>
+      {compMeeting.requestedBy === 'buyer' ? 'Requested' : 'Received'}
+   </div>
+)}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
                       <DriveImage url={company.logoUrl} alt="Logo" className="object-contain h-full w-full mix-blend-multiply" fallbackText="No Logo" />
                     </div>
