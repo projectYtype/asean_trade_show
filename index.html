@@ -856,9 +856,6 @@
                         <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
                             <div className="flex flex-col items-start gap-1">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                                제안 받음
-                              </span>
                               <button onClick={() => setSelectedBuyerId(b?.loginId || b?.id)} className="text-left group mt-1">
                                 <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{b?.companyName || `바이어 ID: ${m.buyerId}`}</span>
                                 <span className="text-xs sm:text-sm text-gray-500">Review Profile &rarr;</span>
@@ -870,7 +867,7 @@
                           </td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 text-right whitespace-nowrap">
                              <div className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg cursor-default">
-                                Received
+                                제안 받음
                              </div>
                           </td>
                         </tr>
@@ -1105,9 +1102,6 @@
                         <tr key={m.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
                             <div className="flex flex-col items-start gap-1">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                                Received
-                              </span>
                               <button onClick={() => setSelectedCompany(comp)} className="text-left group mt-1">
                                 <span className="block font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{comp?.brandEn || `기업 ID: ${m.companyId}`}</span>
                                 <span className="text-xs sm:text-sm text-gray-500">Review Profile &rarr;</span>
