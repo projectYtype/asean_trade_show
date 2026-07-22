@@ -1688,22 +1688,39 @@
         fetchGoogleSheetData();
       }, []);
 
-      const handleSetData = (updater) => {
+      const handleSetData = async (updater) => {
+        // 1. 빠른 UI 반응을 위해 로컬 화면을 즉시 업데이트
         setData((prev) => {
           const newData = typeof updater === 'function' ? updater(prev) : updater;
-          
           localStorage.setItem('expo_data', JSON.stringify(newData));
-          
-          if (APPS_SCRIPT_URL) {
-            fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(newData),
-            }).catch(err => console.error("구글 시트 저장 실패:", err));
-          }
-          
           return newData;
         });
+
+        // 2. 저장 시 다른 사람의 데이터를 날리지 않도록 최신 데이터와 병합 후 저장
+        if (APPS_SCRIPT_URL) {
+          try {
+            // 구글 시트의 가장 최신 상태를 불러옴
+            const response = await fetch(APPS_SCRIPT_URL);
+            const latestSheetData = await response.json();
+            const normalizedLatest = normalizeSheetData(latestSheetData);
+
+            // 내가 추가하려는 동작(미팅 추가 등)을 구글 시트의 '최신 데이터' 기준으로 재적용
+            const freshDataToSave = typeof updater === 'function' ? updater(normalizedLatest) : updater;
+
+            // 병합된 안전한 데이터를 구글 시트에 덮어쓰기
+            await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(freshDataToSave),
+            });
+
+            // 내 브라우저의 화면도 최종 완료된 최신 상태로 동기화
+            setData(freshDataToSave);
+            localStorage.setItem('expo_data', JSON.stringify(freshDataToSave));
+          } catch (error) {
+            console.error("구글 시트 동기화 실패:", error);
+          }
+        }
       };
 
       const showAlert = (msg) => setAlertMsg(msg);
