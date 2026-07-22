@@ -1232,13 +1232,31 @@
 
     const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
       const [selectedSlots, setSelectedSlots] = useState([]);
+      const [selectedLanguage, setSelectedLanguage] = useState('English');
+
+      const languageOptions = [
+        { code: 'English', label: 'English', subLabel: 'English' },
+        { code: 'Korean', label: '한국어', subLabel: 'Korean' },
+        { code: 'Indonesian', label: '인도네시아어', subLabel: 'Indonesian' }
+      ];
 
       useEffect(() => {
         if (isOpen) {
-          if (existingRecord && existingRecord['선택한 미팅 시간']) {
-            setSelectedSlots(existingRecord['선택한 미팅 시간'].split(' || ').map(s => s.trim()).filter(Boolean));
+          if (existingRecord) {
+            if (existingRecord['선택한 미팅 시간']) {
+              setSelectedSlots(existingRecord['선택한 미팅 시간'].split(' || ').map(s => s.trim()).filter(Boolean));
+            } else {
+              setSelectedSlots([]);
+            }
+            const savedLang = existingRecord['통역 언어'] || existingRecord['interpretationLanguage'] || existingRecord['언어'];
+            if (savedLang) {
+              setSelectedLanguage(savedLang);
+            } else {
+              setSelectedLanguage('English');
+            }
           } else {
             setSelectedSlots([]);
+            setSelectedLanguage('English');
           }
         }
       }, [isOpen, existingRecord]);
@@ -1300,6 +1318,7 @@
           '로그인 ID': sessionData.loginId,
           '구분': sessionRole === 'company' ? '참가기업' : '바이어',
           '이름/회사명': sessionData.companyName || sessionData.brandEn || sessionData.nameEn,
+          '통역 언어': selectedLanguage,
           '선택한 미팅 시간': selectedSlots.join(' || '),
           '제출 일시': new Date().toLocaleString()
         };
@@ -1322,12 +1341,43 @@
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
             <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
-                <span className="mr-3 text-3xl">🗓️</span> 온라인 미팅 가능 일자 선택
+                <span className="mr-3 text-3xl">🗓️</span> 온라인 미팅 가능 일자 및 통역 언어 선택
               </h3>
-              <p className="text-gray-600 mt-2 font-medium">원활한 미팅 매칭을 위해 참여 가능하신 일자와 시간을 모두 선택해 주세요. (다중 선택 가능)</p>
+              <p className="text-gray-600 mt-2 font-medium">원활한 미팅 매칭을 위해 희망 통역 언어와 참여 가능하신 시간 슬롯을 모두 선택해 주세요.</p>
             </div>
             
-            <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-8">
+            <div className="p-6 sm:p-8 overflow-y-auto flex-grow custom-scrollbar space-y-6">
+              
+              {/* 통역 언어 선택 섹션 (최상단) */}
+              <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/90 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm sm:text-base font-black text-gray-900 flex items-center">
+                    <span className="text-xl mr-2">🗣️</span> Interpretation Language / 희망 통역 언어 <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <span className="text-xs bg-amber-200/60 text-amber-900 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Required</span>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-4 font-medium">
+                  Select your preferred language for interpretation during 1:1 online meetings.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {languageOptions.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => setSelectedLanguage(lang.code)}
+                      className={`flex flex-col items-center justify-center p-3.5 rounded-xl font-bold transition-all duration-200 border-2 ${
+                        selectedLanguage === lang.code
+                          ? 'bg-[#FDB827] text-gray-900 border-[#e5a620] shadow-md transform -translate-y-0.5 ring-2 ring-[#FDB827]/40'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-amber-300 hover:bg-amber-50/40'
+                      }`}
+                    >
+                      <span className="text-base font-extrabold">{lang.label}</span>
+                      <span className="text-[11px] text-gray-500 font-semibold mt-0.5">({lang.subLabel})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {availableDates.length === 0 || timeTemplates.length === 0 ? (
                 <p className="text-gray-500 text-center py-10 font-bold">현재 설정된 미팅 일정이 없습니다.</p>
               ) : (
@@ -1367,7 +1417,7 @@
 
             <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
               <Button onClick={onClose} variant="ghost">닫기 / 다음에 하기</Button>
-              <Button onClick={handleSubmit} className="px-8 shadow-md">✅ {existingRecord ? "일정 수정하기" : "일정 제출하기"}</Button>
+              <Button onClick={handleSubmit} className="px-8 shadow-md">✅ {existingRecord ? "일정 및 언어 수정하기" : "일정 제출하기"}</Button>
             </div>
           </div>
         </div>
@@ -1454,7 +1504,7 @@
               <div className="flex items-center space-x-2 sm:space-x-4">
                  {(sessionRole === 'company' || sessionRole === 'buyer') && (
                    <Button onClick={onOpenSchedule} variant="outline" className="hidden sm:inline-flex text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">
-                     🗓️ 나의 일정 관리
+                     🗓️ 나의 일정 및 통역언어 관리
                    </Button>
                  )}
                  {sessionRole === 'guest' && (
@@ -1556,7 +1606,7 @@
             }
           } catch (error) {
             console.error("구글 시트 연동 오류:", error);
-          } finally {  // <--- ✅ 이렇게 수정해 주세요!
+          } finally {
             setIsLoading(false);
           }
         };
@@ -1605,8 +1655,8 @@
           <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden px-4">
              <div className="absolute inset-0 bg-cover bg-left lg:bg-center bg-no-repeat opacity-10" style={{ backgroundImage: `url('https://drive.google.com/thumbnail?id=1cPcVCt5c7AOHeAc55OcgfFd3oALFgSft&sz=w1920')` }}></div>
              <div className="relative z-10 flex flex-col items-center bg-white/80 p-6 sm:p-8 rounded-3xl backdrop-blur-sm shadow-xl text-center">
-               <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#FDB827] border-t-transparent rounded-full animate-spin mb-4 sm:mb-6"></div>
-               <p className="text-gray-900 font-extrabold text-lg sm:text-xl tracking-tight">Syncing data...</p>
+                <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#FDB827] border-t-transparent rounded-full animate-spin mb-4 sm:mb-6"></div>
+                <p className="text-gray-900 font-extrabold text-lg sm:text-xl tracking-tight">Syncing data...</p>
              </div>
           </div>
         );
@@ -1662,6 +1712,392 @@
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
+  </script>
+
+  <!-- 
+  ====================================================================
+  [업데이트된 구글 앱스 스크립트 (Google Apps Script Code)]
+  구글 시트 확장 프로그램 > Apps Script 에 복사하여 사용하세요.
+  ====================================================================
+  -->
+  <script type="text/plain" id="google-apps-script">
+// ==========================================
+// 공통: 영문 ↔ 한글 헤더 번역기
+// ==========================================
+var HEADER_DICT = {
+  "id": "ID",
+  "buyerId": "바이어 ID",
+  "companyId": "국내기업 ID",
+  "status": "진행상태",
+  "requestedBy": "요청자",
+  "buyerTime": "바이어 가능시간",
+  "companyTime": "기업 가능시간",
+  "pw": "비밀번호",
+  "password": "비밀번호",
+  "name": "담당자명",
+  "companyName": "회사명",
+  "email": "이메일",
+  "phone": "연락처",
+  "interpretationLanguage": "통역 언어",
+  "language": "통역 언어"
+};
+
+function translateToKorean(key) {
+  return HEADER_DICT[key] || key;
+}
+
+function translateToEnglish(header) {
+  for (var k in HEADER_DICT) {
+    if (HEADER_DICT[k] === header) return k;
+  }
+  return header;
+}
+
+// ==========================================
+// 1. 커스텀 메뉴 추가
+// ==========================================
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('브릿징 그룹 메뉴')
+      .addItem('📊 완전체 미팅 탭 업데이트', 'updateCompleteMeetingsTab')
+      .addSeparator() 
+      .addItem('🛠️ 기존 Meetings 탭 즉시 변환 (한글 헤더 적용)', 'forceUpdateMeetingsTab')
+      .addToUi();
+}
+
+// ==========================================
+// 2. 기존 Meetings 데이터 강제 변환용
+// ==========================================
+function forceUpdateMeetingsTab() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var meetingSheet = ss.getSheetByName("Meetings");
+  
+  if (!meetingSheet) {
+    SpreadsheetApp.getUi().alert("Meetings 시트가 없습니다.");
+    return;
+  }
+  
+  var data = meetingSheet.getDataRange().getValues();
+  if (data.length < 2) {
+    SpreadsheetApp.getUi().alert("변환할 데이터가 없습니다.");
+    return;
+  }
+
+  var buyerMap = {};
+  var buyerSheet = ss.getSheetByName("Buyers");
+  if (buyerSheet) {
+    var bData = buyerSheet.getDataRange().getValues();
+    for (var r = 1; r < bData.length; r++) {
+      if (bData[r][0]) buyerMap[String(bData[r][0]).trim()] = String(bData[r][8]).trim();
+    }
+  }
+
+  var companyMap = {};
+  var companySheet = ss.getSheetByName("Companies");
+  if (companySheet) {
+    var cData = companySheet.getDataRange().getValues();
+    for (var c = 1; c < cData.length; c++) {
+      if (cData[c][0]) companyMap[String(cData[c][0]).trim()] = String(cData[c][3]).trim();
+    }
+  }
+
+  var headers = data[0];
+  
+  var statusIdx = headers.indexOf("status") > -1 ? headers.indexOf("status") : headers.indexOf("진행상태");
+  var buyerIdIdx = headers.indexOf("buyerId") > -1 ? headers.indexOf("buyerId") : headers.indexOf("바이어 ID");
+  var companyIdIdx = headers.indexOf("companyId") > -1 ? headers.indexOf("companyId") : headers.indexOf("국내기업 ID");
+  
+  var buyerNameIdx = headers.indexOf("바이어 회사명");
+  if (buyerNameIdx === -1) {
+    headers.push("바이어 회사명");
+    buyerNameIdx = headers.length - 1;
+  }
+  var companyNameIdx = headers.indexOf("국내기업 회사명");
+  if (companyNameIdx === -1) {
+    headers.push("국내기업 회사명");
+    companyNameIdx = headers.length - 1;
+  }
+
+  for (var h = 0; h < headers.length; h++) {
+    headers[h] = translateToKorean(headers[h]);
+  }
+  data[0] = headers; 
+
+  for (var i = 1; i < data.length; i++) {
+    if (statusIdx !== -1 && String(data[i][statusIdx]).toLowerCase() === "pending") {
+      data[i][statusIdx] = "Requested";
+    }
+    
+    var bId = buyerIdIdx !== -1 ? String(data[i][buyerIdIdx]).trim() : "";
+    var cId = companyIdIdx !== -1 ? String(data[i][companyIdIdx]).trim() : "";
+    
+    data[i][buyerNameIdx] = buyerMap[bId] || bId;
+    data[i][companyNameIdx] = companyMap[cId] || cId;
+  }
+  
+  meetingSheet.clear();
+  meetingSheet.getRange(1, 1, data.length, headers.length).setValues(data);
+  meetingSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f4f6");
+  
+  SpreadsheetApp.getUi().alert("✅ 기존 데이터 변환 성공! (헤더 한글화 + Requested 변경 + 회사명 추가)");
+}
+
+// ==========================================
+// 3. 완전체 미팅 탭 자동 생성 기능 (통역 언어 및 가능시간 매핑)
+// ==========================================
+function updateCompleteMeetingsTab() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var meetings = getSheetData("Meetings");
+  if (meetings.length === 0) {
+    SpreadsheetApp.getUi().alert("Meetings 시트에 데이터가 없습니다.");
+    return;
+  }
+
+  // 1. 바이어/기업 회사명 매핑
+  var buyerMap = {};
+  var buyerSheet = ss.getSheetByName("Buyers");
+  if (buyerSheet) {
+    var buyerData = buyerSheet.getDataRange().getValues();
+    for (var r = 1; r < buyerData.length; r++) {
+      if (buyerData[r][0]) buyerMap[String(buyerData[r][0]).trim()] = String(buyerData[r][8]).trim();
+    }
+  }
+
+  var companyMap = {};
+  var companySheet = ss.getSheetByName("Companies");
+  if (companySheet) {
+    var companyData = companySheet.getDataRange().getValues();
+    for (var c = 1; c < companyData.length; c++) {
+      if (companyData[c][0]) companyMap[String(companyData[c][0]).trim()] = String(companyData[c][3]).trim();
+    }
+  }
+
+  // 2. '온라인미팅 일정' 시트에서 아이디 대조하여 가능시간 및 통역 언어 가져오기
+  var timeMap = {};
+  var langMap = {};
+  var scheduleSheet = ss.getSheetByName("온라인미팅 일정");
+  if (scheduleSheet) {
+    var sData = scheduleSheet.getDataRange().getValues();
+    if (sData.length > 1) {
+      var headers = sData[0].map(function(h) { return String(h).trim(); });
+      
+      var timeColIdx = -1;
+      var langColIdx = -1;
+      
+      for (var col = 0; col < headers.length; col++) {
+        var hName = headers[col];
+        if (hName === "선택한 미팅 시간" || hName.indexOf("시간") > -1) timeColIdx = col;
+        if (hName === "통역 언어" || hName.indexOf("언어") > -1 || hName.indexOf("Language") > -1) langColIdx = col;
+      }
+      
+      if (timeColIdx === -1) timeColIdx = 4; // 기본 E열 (인덱스 4)
+
+      for (var r = 1; r < sData.length; r++) {
+        var row = sData[r];
+        var timeValue = timeColIdx !== -1 ? String(row[timeColIdx] || "").trim() : "";
+        var langValue = langColIdx !== -1 ? String(row[langColIdx] || "").trim() : "";
+
+        // 앞선 열(A, B, C, D) 등에서 로그인 아이디를 찾아 시간/언어 매칭
+        for (var col = 0; col < Math.min(headers.length, 5); col++) {
+          if (col === timeColIdx || col === langColIdx) continue;
+          var idValue = String(row[col] || "").trim();
+          if (idValue) {
+            if (timeValue) timeMap[idValue] = timeValue;
+            if (langValue) langMap[idValue] = langValue;
+          }
+        }
+      }
+    }
+  }
+
+  // 3. '완전체 미팅 (현황판)' 시트 초기화
+  var targetSheetName = "완전체 미팅 (현황판)";
+  var targetSheet = ss.getSheetByName(targetSheetName);
+  if (!targetSheet) {
+    targetSheet = ss.insertSheet(targetSheetName);
+  } else {
+    targetSheet.clear(); 
+  }
+
+  var headers = [
+    "미팅 ID", 
+    "누가 요청했나", 
+    "바이어 (회사명)", 
+    "국내기업 (회사명)", 
+    "미팅 현황(상태)", 
+    "바이어 가능시간", 
+    "기업 가능시간",
+    "통역 언어"
+  ];
+  var rows = [headers];
+
+  // 4. 데이터 조립 및 E열 가능시간 및 통역 언어 꽂아넣기
+  meetings.forEach(function(m) {
+    var meetingId = m["미팅ID"] || m["id"] || m["Meeting ID"] || m["ID"] || "";
+    var buyerId = String(m["바이어 ID"] || m["buyerId"] || m["바이어ID"] || "").trim();
+    var companyId = String(m["국내기업 ID"] || m["companyId"] || m["기업ID"] || "").trim();
+    var requester = m["요청자"] || m["requestedBy"] || m["Requester"] || "정보 없음";
+    
+    var status = m["진행상태"] || m["상태"] || m["status"] || m["현황"] || "대기중";
+    if (String(status).toLowerCase() === "pending") status = "Requested";
+    
+    var buyerCompanyName = buyerMap[buyerId] || (buyerId ? "(회사명 없음 - ID: " + buyerId + ")" : "(ID 미입력)");
+    var domesticCompanyName = companyMap[companyId] || (companyId ? "(회사명 없음 - ID: " + companyId + ")" : "(ID 미입력)");
+    
+    var buyerTime = timeMap[buyerId] || "-";
+    var companyTime = timeMap[companyId] || "-";
+    var selectedLang = langMap[buyerId] || langMap[companyId] || "-";
+
+    rows.push([meetingId, requester, buyerCompanyName, domesticCompanyName, status, buyerTime, companyTime, selectedLang]);
+  });
+
+  targetSheet.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  targetSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#F2E084").setHorizontalAlignment("center");
+  targetSheet.setFrozenRows(1);
+  targetSheet.autoResizeColumns(1, headers.length);
+
+  SpreadsheetApp.getUi().alert("'완전체 미팅 (현황판)' 업데이트 완료! 🎉\n(온라인미팅 일정 탭의 선택시간 및 통역 언어 정보를 성공적으로 매칭했습니다.)");
+}
+
+// ==========================================
+// 4. 웹사이트 통신용 API 및 데이터 처리
+// ==========================================
+function doGet(e) {
+  var data = {
+    companies: getSheetData("Companies"),
+    buyers: getSheetData("Buyers"),
+    meetings: getSheetData("Meetings"),
+    meetingSettings: getSheetData("온라인미팅 설정"),
+    meetingSchedules: getSheetData("온라인미팅 일정")
+  };
+  
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    var buyerMap = {};
+    var buyerSheet = ss.getSheetByName("Buyers");
+    if (buyerSheet) {
+      var buyerData = buyerSheet.getDataRange().getValues();
+      for (var r = 1; r < buyerData.length; r++) {
+        if (buyerData[r][0]) buyerMap[String(buyerData[r][0]).trim()] = String(buyerData[r][8]).trim();
+      }
+    }
+
+    var companyMap = {};
+    var companySheet = ss.getSheetByName("Companies");
+    if (companySheet) {
+      var companyData = companySheet.getDataRange().getValues();
+      for (var c = 1; c < companyData.length; c++) {
+        if (companyData[c][0]) companyMap[String(companyData[c][0]).trim()] = String(companyData[c][3]).trim();
+      }
+    }
+
+    if (payload.companies) setSheetData("Companies", payload.companies);
+    if (payload.buyers) setSheetData("Buyers", payload.buyers);
+    
+    if (payload.meetings) {
+      var processedMeetings = payload.meetings.map(function(m) {
+        
+        Object.keys(m).forEach(function(key) {
+          if ((key.toLowerCase() === "status" || key === "진행상태" || key === "상태") && String(m[key]).toLowerCase() === "pending") {
+            m[key] = "Requested";
+          }
+        });
+
+        var bId = String(m["buyerId"] || m["바이어 ID"] || "").trim();
+        var cId = String(m["companyId"] || m["국내기업 ID"] || "").trim();
+        
+        if (bId) m["바이어 회사명"] = buyerMap[bId] || bId;
+        if (cId) m["국내기업 회사명"] = companyMap[cId] || cId;
+
+        return m;
+      });
+      setSheetData("Meetings", processedMeetings);
+    }
+    
+    if (payload.meetingSchedules) setSheetData("온라인미팅 일정", payload.meetingSchedules);
+
+    return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getSheetData(sheetName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) return [];
+  var range = sheet.getDataRange();
+  if (range.isBlank()) return [];
+  
+  var data = range.getValues();
+  if (data.length < 2) return []; 
+
+  var headers = data[0];
+  var result = [];
+  
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) {
+      var enKey = translateToEnglish(headers[j]);
+      obj[enKey] = row[j] !== "" && row[j] !== null && row[j] !== undefined ? String(row[j]) : ""; 
+    }
+    result.push(obj);
+  }
+  
+  return result.reverse();
+}
+
+function setSheetData(sheetName, items) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  } else {
+    sheet.clear();
+  }
+
+  if (!items || items.length === 0) return;
+
+  var reversedItems = items.slice().reverse();
+
+  var keys = [];
+  reversedItems.forEach(function(item) {
+    Object.keys(item).forEach(function(key) {
+      if (keys.indexOf(key) === -1) {
+        keys.push(key);
+      }
+    });
+  });
+
+  var headers = keys.map(translateToKorean);
+  var rows = [headers]; 
+
+  reversedItems.forEach(function(item) {
+    var row = [];
+    keys.forEach(function(key) {
+      var val = item[key];
+      row.push(val !== undefined && val !== null ? String(val) : "");
+    });
+    rows.push(row);
+  });
+
+  var newRange = sheet.getRange(1, 1, rows.length, rows[0].length);
+  newRange.setValues(rows);
+  
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f4f6");
+}
   </script>
 </body>
 </html>
