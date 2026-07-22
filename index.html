@@ -745,7 +745,7 @@
                   👥 바이어 탐색
                 </button>
                 <button onClick={() => setActiveSubTab('requests')} className={`flex-1 md:flex-none whitespace-nowrap relative px-4 sm:px-5 py-2.5 font-bold rounded-lg text-sm transition-all ${activeSubTab === 'requests' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-                  📨 미팅 요청 내역 {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
+                  📨 받은 미팅 요청 {pendingIncomingCount > 0 && <span className="ml-2 inline-flex items-center justify-center bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs animate-pulse">{pendingIncomingCount}</span>}
                 </button>
               </div>
           </div>
