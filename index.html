@@ -525,6 +525,8 @@
             )}
           </div>
 
+          {/* ... [기존 Modal - isAddCompModal 등 생략 없이 동일하게 유지] ... */}
+          {/* 공간상 생략 없이 모두 출력합니다. */}
           <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title={newComp.id ? "🏢 기업 정보 수정" : "✨ 새 기업 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddComp} className="space-y-6">
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
@@ -694,12 +696,12 @@
               <Button onClick={() => setViewingBuyer(null)} variant="secondary">닫기</Button>
             </div>
           </Modal>
-
         </div>
       );
     };
 
     const CompanyDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
+      // ... [기존 CompanyDashboard 컴포넌트 전체 복사]
       const { meetings = [], buyers = [] } = data || {};
       const [activeSubTab, setActiveSubTab] = useState('directory'); 
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
@@ -867,7 +869,7 @@
                           </td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 text-right whitespace-nowrap">
                              <div className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg cursor-default">
-                                제안 받음
+                               제안 받음
                              </div>
                           </td>
                         </tr>
@@ -989,11 +991,11 @@
     };
 
     const BuyerDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
+      // ... [기존 BuyerDashboard 컴포넌트 전체 복사]
       const { companies = [], meetings = [] } = data || {};
       const [selectedCompany, setSelectedCompany] = useState(null);
       const [activeSubTab, setActiveSubTab] = useState('directory');
 
-      // 바이어 기준 받은 요청만 필터링
       const allMyRequests = meetings.filter(m => String(m.buyerId) === String(sessionData.loginId));
       const incomingRequests = allMyRequests.filter(m => m.requestedBy === 'company');
       const pendingIncomingCount = incomingRequests.filter(m => m.status === 'pending').length;
@@ -1045,7 +1047,6 @@
                 return (
                   <Card key={cKey} hover onClick={() => setSelectedCompany(company)} className="flex flex-col overflow-hidden group cursor-pointer">
                     <div className="h-32 sm:h-40 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100 p-4 sm:p-6 relative">
-                      {/* 신청 뱃지 추가 */}
                       {compMeeting && (
    <div className={`absolute top-0 right-0 px-3 py-1.5 text-xs font-bold text-white z-20 shadow-sm rounded-bl-xl ${compMeeting.requestedBy === 'buyer' ? 'bg-orange-500' : 'bg-blue-500'}`}>
       {compMeeting.requestedBy === 'buyer' ? 'Requested' : 'Received'}
@@ -1322,7 +1323,7 @@
 
     const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
       const [selectedSlots, setSelectedSlots] = useState([]);
-      const [selectedLanguage, setSelectedLanguage] = useState('English');
+      const [selectedLanguage, setSelectedLanguage] = useState(''); // 빈 값으로 초기화하여 무조건 선택하게 함
 
       const languageOptions = [
         { code: 'English', label: 'English', subLabel: sessionRole === 'buyer' ? 'English' : '한국어' },
@@ -1342,11 +1343,11 @@
             if (savedLang) {
               setSelectedLanguage(savedLang);
             } else {
-              setSelectedLanguage('English');
+              setSelectedLanguage(''); // 무조건 재선택 유도
             }
           } else {
             setSelectedSlots([]);
-            setSelectedLanguage('English');
+            setSelectedLanguage(''); // 무조건 재선택 유도
           }
         }
       }, [isOpen, existingRecord]);
@@ -1398,8 +1399,21 @@
       };
 
       const handleSubmit = () => {
-        if (selectedSlots.length === 0) {
-          showAlert(sessionRole === 'buyer' ? "Please select at least one time slot." : "최소 1개 이상의 시간을 선택해주세요.");
+        // 통역 언어 필수 선택 체크
+        if (sessionRole === 'buyer' && !selectedLanguage) {
+          showAlert("Please select an interpretation language.");
+          return;
+        }
+
+        // 날짜별 최소 1개 항목(Unable to attend 포함) 선택 확인
+        const missingDates = availableDates.filter(date => {
+          return !selectedSlots.some(slot => slot.startsWith(`[${date}]`));
+        });
+
+        if (missingDates.length > 0) {
+          showAlert(sessionRole === 'buyer' 
+            ? "Please select at least one option for EVERY date (including 'Unable to attend')." 
+            : "모든 날짜에 대해 최소 1개 이상의 항목을 선택해주세요.");
           return;
         }
 
@@ -1427,11 +1441,12 @@
            : (sessionRole === 'buyer' ? "Your online meeting availability has been saved successfully!" : "일정이 성공적으로 제출되었습니다!");
         
         showAlert(successMsg);
-        onClose();
+        onClose(); // 저장 완료 후 닫기
       };
 
       return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+          {/* 강제 입력을 위해 바탕화면 클릭이나 별도 닫기 이벤트를 바인딩하지 않음 */}
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
             <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
@@ -1454,8 +1469,11 @@
                     </label>
                     <span className="text-xs bg-amber-200/60 text-amber-900 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Required</span>
                   </div>
+                  {/* 설명 문구 요구사항 반영 */}
                   <p className="text-xs sm:text-sm text-gray-600 mb-4 font-medium">
-                    Select your preferred language for interpretation during 1:1 online meetings.
+                    {sessionRole === 'buyer' 
+                        ? 'Required even if you do not participate in online meetings. This helps us determine the language to be used for both online and offline meetings.'
+                        : '온라인 미팅에 참여하지 않더라도 필수로 선택해주세요. (온라인 & 오프라인 미팅 사용 언어 파악 목적)'}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {languageOptions.map((lang) => (
@@ -1516,10 +1534,8 @@
               )}
             </div>
 
+            {/* "닫기 / 다음에 하기" 버튼을 제거하여 무조건 제출하게 함 */}
             <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
-              <Button onClick={onClose} variant="ghost">
-                {sessionRole === 'buyer' ? 'Close / Do it later' : '닫기 / 다음에 하기'}
-              </Button>
               <Button onClick={handleSubmit} className="px-8 shadow-md">
                 ✅ {existingRecord 
                     ? (sessionRole === 'buyer' ? 'Update Schedule & Language' : '일정 수정하기') 
@@ -1541,7 +1557,6 @@
                  <span className="text-lg sm:text-2xl font-extrabold tracking-tight text-gray-900 truncate max-w-[160px] sm:max-w-none">ASEAN Korea Beauty Trade Show</span>
               </div>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                 {/* 👇 buyer에게만 버튼 노출 */}
                  {sessionRole === 'buyer' && (
                    <Button onClick={onOpenSchedule} variant="outline" className="hidden sm:inline-flex text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">
                       🗓️ Manage Schedule & Language
@@ -1717,7 +1732,6 @@
            return; 
         }
 
-        // 👇 buyer(바이어)일 때만 팝업이 뜨도록 변경
         if (sessionRole === 'buyer' && !hasSubmittedSchedule) {
            setShowScheduleModal(true);
         }
