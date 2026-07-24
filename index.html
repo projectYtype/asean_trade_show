@@ -92,17 +92,19 @@
       </div>
     );
 
-    const Modal = ({ isOpen, onClose, title, children }) => {
+    const Modal = ({ isOpen, onClose, title, children, hideCloseButton = false }) => {
       if (!isOpen) return null;
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto pt-16 sm:pt-20">
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={hideCloseButton ? undefined : onClose}></div>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[calc(100vh-5rem)] flex flex-col relative z-10 transform transition-all animate-zoom-in">
             <div className="flex justify-between items-center p-5 sm:px-8 sm:py-6 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{title}</h3>
-              <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
+              {!hideCloseButton && (
+                <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              )}
             </div>
             <div className="p-5 sm:p-8 overflow-y-auto flex-grow custom-scrollbar">
               {children}
@@ -525,8 +527,6 @@
             )}
           </div>
 
-          {/* ... [기존 Modal - isAddCompModal 등 생략 없이 동일하게 유지] ... */}
-          {/* 공간상 생략 없이 모두 출력합니다. */}
           <Modal isOpen={isAddCompModal} onClose={() => setIsAddCompModal(false)} title={newComp.id ? "🏢 기업 정보 수정" : "✨ 새 기업 계정 추가 (전체 정보)"}>
             <form onSubmit={handleAddComp} className="space-y-6">
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
@@ -701,7 +701,6 @@
     };
 
     const CompanyDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
-      // ... [기존 CompanyDashboard 컴포넌트 전체 복사]
       const { meetings = [], buyers = [] } = data || {};
       const [activeSubTab, setActiveSubTab] = useState('directory'); 
       const [selectedBuyerId, setSelectedBuyerId] = useState(null);
@@ -991,7 +990,6 @@
     };
 
     const BuyerDashboard = ({ sessionData, data, setData, showAlert, showConfirm }) => {
-      // ... [기존 BuyerDashboard 컴포넌트 전체 복사]
       const { companies = [], meetings = [] } = data || {};
       const [selectedCompany, setSelectedCompany] = useState(null);
       const [activeSubTab, setActiveSubTab] = useState('directory');
@@ -1324,7 +1322,7 @@
     const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
       const [selectedSlots, setSelectedSlots] = useState([]);
       const [selectedLanguage, setSelectedLanguage] = useState(''); // 빈 값으로 초기화하여 무조건 선택하게 함
-      const [isSubmitting, setIsSubmitting] = useState(false); // 👈 저장 중 상태 추가
+      const [isSubmitting, setIsSubmitting] = useState(false); // 저장 중 상태 추가
 
       const languageOptions = [
         { code: 'English', label: 'English', subLabel: sessionRole === 'buyer' ? 'English' : '한국어' },
@@ -1399,11 +1397,10 @@
         else setSelectedSlots([...selectedSlots, slot]);
       };
 
-      // 👈 async를 붙여서 저장이 끝날 때까지 기다리도록 수정
       const handleSubmit = async () => {
-        // 통역 언어 필수 선택 체크
+        // 통역 언어 필수 선택 체크 (통과 못하면 즉시 종료, 다음 로직 미실행)
         if (sessionRole === 'buyer' && !selectedLanguage) {
-          showAlert("Please select an interpretation language.");
+          showAlert("온라인 미팅 참여 여부와 관계없이 통역 언어를 필수로 선택해주세요.\n(Please select an interpretation language.)");
           return;
         }
 
@@ -1412,13 +1409,13 @@
           return !selectedSlots.some(slot => slot.startsWith(`[${date}]`));
         });
 
+        // 날짜별로 1개라도 안 고른 날짜가 있다면 (통과 못하면 즉시 종료, 다음 로직 미실행)
         if (missingDates.length > 0) {
-          showAlert(sessionRole === 'buyer' 
-            ? "Please select at least one option for EVERY date (including 'Unable to attend')." 
-            : "모든 날짜에 대해 최소 1개 이상의 항목을 선택해주세요.");
+          showAlert("모든 날짜에 대해 최소 1개 이상의 시간(또는 참석 불가)을 선택해주세요.\n(Please select at least one option for EVERY date.)");
           return;
         }
 
+        // --- 여기서부터는 완벽하게 입력한 경우에만 실행됩니다 ---
         const newSchedule = {
           id: existingRecord ? existingRecord.id : 'sch_' + Date.now(),
           '로그인 ID': sessionData.loginId,
@@ -1429,10 +1426,10 @@
           '제출 일시': new Date().toLocaleString()
         };
 
-        setIsSubmitting(true); // 👈 저장 중 버튼 잠금
+        setIsSubmitting(true); // 제출 버튼 비활성화 (로딩 상태)
 
         try {
-          // 👈 await를 추가하여 구글 시트 전송이 끝날 때까지 대기
+          // 비동기로 데이터 업데이트 대기
           await handleSetData(prev => {
             const schedules = prev.meetingSchedules || [];
             if (existingRecord) {
@@ -1447,19 +1444,23 @@
              : (sessionRole === 'buyer' ? "Your online meeting availability has been saved successfully!" : "일정이 성공적으로 제출되었습니다!");
           
           showAlert(successMsg);
-          onClose(); // 👈 구글 시트에 안전하게 저장이 완료된 후 팝업 닫기
+          onClose(); // 구글 시트에 안전하게 저장이 완료된 후 팝업 닫기
         } catch (error) {
           showAlert("저장 중 문제가 발생했습니다. 인터넷 연결을 확인해주세요.");
         } finally {
-          setIsSubmitting(false); // 👈 작업 완료 후 버튼 잠금 해제
+          setIsSubmitting(false); // 상태 초기화
         }
       };
 
       return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          {/* 강제 입력을 위해 바탕화면 클릭이나 별도 닫기 이벤트를 바인딩하지 않음 */}
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative z-10 animate-zoom-in">
-            <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50 rounded-t-3xl">
+        <Modal 
+          isOpen={isOpen} 
+          onClose={onClose} 
+          title="🗓️ Schedule Settings" 
+          hideCloseButton={true} // 닫기(X) 버튼 숨김 처리
+        >
+          <div className="flex flex-col relative z-10 animate-zoom-in -m-5 sm:-m-8">
+            <div className="p-6 sm:p-8 border-b border-gray-100 bg-blue-50/50">
               <h3 className="text-2xl font-black text-blue-900 tracking-tight flex items-center">
                 <span className="mr-3 text-3xl">🗓️</span> 
                 {sessionRole === 'buyer' ? 'Available Online Meeting Dates & Interpretation Language' : '온라인 미팅 가능 시간 선택'}
@@ -1546,17 +1547,17 @@
             </div>
 
             {/* "닫기 / 다음에 하기" 버튼을 제거하여 무조건 제출하게 함 */}
-            <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
+            <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3 mt-auto">
               <Button onClick={handleSubmit} disabled={isSubmitting} className="px-8 shadow-md">
                 {isSubmitting 
-                  ? '⏳ 저장 중...' 
+                  ? '⏳ 처리 중...' 
                   : (existingRecord 
                       ? (sessionRole === 'buyer' ? 'Update Schedule' : '일정 수정하기') 
                       : (sessionRole === 'buyer' ? 'Submit Schedule' : '일정 제출하기'))}
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       );
     };
 
