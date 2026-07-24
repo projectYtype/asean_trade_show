@@ -1324,6 +1324,7 @@
     const ScheduleModal = ({ isOpen, onClose, data, sessionData, sessionRole, handleSetData, showAlert, existingRecord }) => {
       const [selectedSlots, setSelectedSlots] = useState([]);
       const [selectedLanguage, setSelectedLanguage] = useState(''); // 빈 값으로 초기화하여 무조건 선택하게 함
+      const [isSubmitting, setIsSubmitting] = useState(false); // 👈 저장 중 상태 추가
 
       const languageOptions = [
         { code: 'English', label: 'English', subLabel: sessionRole === 'buyer' ? 'English' : '한국어' },
@@ -1398,7 +1399,8 @@
         else setSelectedSlots([...selectedSlots, slot]);
       };
 
-      const handleSubmit = () => {
+      // 👈 async를 붙여서 저장이 끝날 때까지 기다리도록 수정
+      const handleSubmit = async () => {
         // 통역 언어 필수 선택 체크
         if (sessionRole === 'buyer' && !selectedLanguage) {
           showAlert("Please select an interpretation language.");
@@ -1427,21 +1429,30 @@
           '제출 일시': new Date().toLocaleString()
         };
 
-        handleSetData(prev => {
-          const schedules = prev.meetingSchedules || [];
-          if (existingRecord) {
-            return { ...prev, meetingSchedules: schedules.map(s => s.id === newSchedule.id ? newSchedule : s) };
-          } else {
-            return { ...prev, meetingSchedules: [newSchedule, ...schedules] };
-          }
-        });
-        
-        let successMsg = existingRecord 
-           ? (sessionRole === 'buyer' ? "Your schedule has been updated successfully!" : "일정이 성공적으로 수정되었습니다!") 
-           : (sessionRole === 'buyer' ? "Your online meeting availability has been saved successfully!" : "일정이 성공적으로 제출되었습니다!");
-        
-        showAlert(successMsg);
-        onClose(); // 저장 완료 후 닫기
+        setIsSubmitting(true); // 👈 저장 중 버튼 잠금
+
+        try {
+          // 👈 await를 추가하여 구글 시트 전송이 끝날 때까지 대기
+          await handleSetData(prev => {
+            const schedules = prev.meetingSchedules || [];
+            if (existingRecord) {
+              return { ...prev, meetingSchedules: schedules.map(s => s.id === newSchedule.id ? newSchedule : s) };
+            } else {
+              return { ...prev, meetingSchedules: [newSchedule, ...schedules] };
+            }
+          });
+          
+          let successMsg = existingRecord 
+             ? (sessionRole === 'buyer' ? "Your schedule has been updated successfully!" : "일정이 성공적으로 수정되었습니다!") 
+             : (sessionRole === 'buyer' ? "Your online meeting availability has been saved successfully!" : "일정이 성공적으로 제출되었습니다!");
+          
+          showAlert(successMsg);
+          onClose(); // 👈 구글 시트에 안전하게 저장이 완료된 후 팝업 닫기
+        } catch (error) {
+          showAlert("저장 중 문제가 발생했습니다. 인터넷 연결을 확인해주세요.");
+        } finally {
+          setIsSubmitting(false); // 👈 작업 완료 후 버튼 잠금 해제
+        }
       };
 
       return (
@@ -1536,10 +1547,12 @@
 
             {/* "닫기 / 다음에 하기" 버튼을 제거하여 무조건 제출하게 함 */}
             <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl flex justify-end gap-3">
-              <Button onClick={handleSubmit} className="px-8 shadow-md">
-                ✅ {existingRecord 
-                    ? (sessionRole === 'buyer' ? 'Update Schedule & Language' : '일정 수정하기') 
-                    : (sessionRole === 'buyer' ? 'Submit Schedule' : '일정 제출하기')}
+              <Button onClick={handleSubmit} disabled={isSubmitting} className="px-8 shadow-md">
+                {isSubmitting 
+                  ? '⏳ 저장 중...' 
+                  : (existingRecord 
+                      ? (sessionRole === 'buyer' ? 'Update Schedule' : '일정 수정하기') 
+                      : (sessionRole === 'buyer' ? 'Submit Schedule' : '일정 제출하기'))}
               </Button>
             </div>
           </div>
