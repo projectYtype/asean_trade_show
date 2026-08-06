@@ -710,6 +710,15 @@
       const incomingRequests = allMyRequests.filter(m => m.requestedBy === 'buyer');
       const pendingIncomingCount = incomingRequests.filter(m => m.status === 'pending').length;
 
+      const handleAcceptMeeting = (meetingId) => {
+        showConfirm("이 미팅 제안을 수락하시겠습니까?", () => {
+          setData(prev => ({
+            ...prev,
+            meetings: prev.meetings.map(m => m.id === meetingId ? { ...m, status: 'accepted' } : m)
+          }));
+          showAlert("미팅이 수락되었습니다.");
+        });
+      };
       const handleRequestMeetingWithBuyer = (buyerLoginId) => {
         setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: buyerLoginId, companyId: sessionData.loginId, status: 'pending', requestedBy: 'company' }] }));
         showAlert("바이어에게 미팅 신청이 전송되었습니다.");
@@ -866,11 +875,18 @@
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap">
                              <Badge status={m.status} isIncoming={true} isEnglish={true} />
                           </td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 text-right whitespace-nowrap">
-                             <div className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-lg cursor-default">
-                               제안 받음
-                             </div>
-                          </td>
+
+<td className="px-4 sm:px-6 py-4 sm:py-5 text-right whitespace-nowrap">
+  {m.status === 'pending' ? (
+    <Button onClick={() => handleAcceptMeeting(m.id)} className="px-4 py-2 text-sm shadow-sm bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500 border-0">
+      수락하기
+    </Button>
+  ) : (
+    <div className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg cursor-default">
+      수락 완료
+    </div>
+  )}
+</td>
                         </tr>
                       )
                     })}
@@ -997,7 +1013,15 @@
       const allMyRequests = meetings.filter(m => String(m.buyerId) === String(sessionData.loginId));
       const incomingRequests = allMyRequests.filter(m => m.requestedBy === 'company');
       const pendingIncomingCount = incomingRequests.filter(m => m.status === 'pending').length;
-
+const handleAcceptMeeting = (meetingId) => {
+        showConfirm("Are you sure you want to accept this meeting request?", () => {
+          setData(prev => ({
+            ...prev,
+            meetings: prev.meetings.map(m => m.id === meetingId ? { ...m, status: 'accepted' } : m)
+          }));
+          showAlert("Meeting request accepted.");
+        });
+      };
       const handleRequestMeeting = (companyLoginId) => { 
         setData(prev => ({ ...prev, meetings: [...(prev.meetings || []), { id: 'mtg_' + Date.now(), buyerId: sessionData.loginId, companyId: companyLoginId, status: 'pending', requestedBy: 'buyer' }] })); 
         showAlert("Meeting request sent successfully."); 
@@ -1108,11 +1132,18 @@
                             </div>
                           </td>
                           <td className="px-4 sm:px-6 py-4 sm:py-5 whitespace-nowrap"><Badge status={m.status} isIncoming={isIncoming} isEnglish={true} /></td>
-                          <td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
-                              <span className="text-sm font-bold text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-                                  Received
-                              </span>
-                          </td>
+
+<td className="px-4 sm:px-6 py-4 sm:py-5 text-right space-x-2 whitespace-nowrap">
+  {m.status === 'pending' ? (
+    <Button onClick={() => handleAcceptMeeting(m.id)} className="px-4 py-2 text-sm shadow-sm bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500 border-0">
+      Accept
+    </Button>
+  ) : (
+    <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+      Accepted
+    </span>
+  )}
+</td>
                         </tr>
                       )
                     })}
